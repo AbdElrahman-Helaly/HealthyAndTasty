@@ -202,6 +202,7 @@ const GLOBAL_PATHS = [
   '/api/me/',
   '/api/employees',
   '/api/roles',
+  '/api/users',
   '/api/branches',
   '/api/notifications',
   '/api/admin/banners',
@@ -359,6 +360,29 @@ function sanitizeBranch(raw: unknown): Branch | null {
   };
 }
 
+function normalizeCountry(raw: unknown): { id: string; code: string; name: string } {
+  if (typeof raw === 'number') {
+    const countryMap: Record<number, { id: string; code: string; name: string }> = {
+      1: { id: 'eg', code: 'EG', name: 'Egypt' },
+      2: { id: 'sa', code: 'SA', name: 'Saudi Arabia' },
+      3: { id: 'ae', code: 'AE', name: 'UAE' },
+    };
+    return countryMap[raw] ?? { id: 'eg', code: 'EG', name: 'Egypt' };
+  }
+
+  if (typeof raw === 'string') {
+    const code = raw.toUpperCase();
+    const countryMap: Record<string, { id: string; code: string; name: string }> = {
+      EG: { id: 'eg', code: 'EG', name: 'Egypt' },
+      SA: { id: 'sa', code: 'SA', name: 'Saudi Arabia' },
+      AE: { id: 'ae', code: 'AE', name: 'UAE' },
+    };
+    return countryMap[code] ?? { id: code.toLowerCase(), code, name: code };
+  }
+
+  return { id: '', code: '', name: '' };
+}
+
 function sanitizeBranchEmployee(raw: unknown): BranchEmployee | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -477,6 +501,16 @@ function sanitizeArray<T>(items: unknown, sanitizer: (raw: unknown) => T | null)
   return items.map(sanitizer).filter((item): item is T => item !== null);
 }
 
+function getTotalCount(raw: Record<string, unknown>, fallback: number): number {
+  return typeof raw.total === 'number'
+    ? raw.total
+    : typeof raw.totalCount === 'number'
+    ? raw.totalCount
+    : typeof raw.count === 'number'
+    ? raw.count
+    : fallback;
+}
+
 function sanitizeAddress(raw: unknown): Address | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -485,7 +519,7 @@ function sanitizeAddress(raw: unknown): Address | null {
   const line1 = typeof r.line1 === 'string' ? r.line1 : '';
   const city = typeof r.city === 'string' ? r.city : '';
   const region = typeof r.region === 'string' ? r.region : '';
-  const country = typeof r.country === 'string' ? r.country : '';
+  const country = normalizeCountry(r.country).code;
   if (!id || !line1 || !city) return null;
   return {
     id,
@@ -547,7 +581,7 @@ function sanitizeProductPage(
     const items = r.items ?? r.data ?? r.products;
     return {
       items: sanitizeArray(items, sanitizeProduct),
-      total: typeof r.total === 'number' ? r.total : 0,
+      total: getTotalCount(r, Array.isArray(items) ? items.length : 0),
       page: typeof r.page === 'number' ? r.page : page,
       pageSize: typeof r.pageSize === 'number' ? r.pageSize : pageSize,
     };
@@ -588,7 +622,7 @@ function sanitizeImportHistoryPage(
     const items = r.items ?? r.data ?? r.history;
     return {
       items: sanitizeArray(items, sanitizeImportHistoryRecord),
-      total: typeof r.total === 'number' ? r.total : 0,
+      total: getTotalCount(r, Array.isArray(items) ? items.length : 0),
       page: typeof r.page === 'number' ? r.page : page,
       pageSize: typeof r.pageSize === 'number' ? r.pageSize : pageSize,
     };
@@ -684,8 +718,14 @@ export const api = {
   },
 
   categories: {
-    async list(): Promise<Category[]> {
-      const raw = await request<unknown>('GET', '/categories');
+    async list(params: { page?: number; pageSize?: number; search?: string; isActive?: boolean } = {}): Promise<Category[]> {
+      const qs = new URLSearchParams();
+      if (params.page !== undefined) qs.set('page', String(params.page));
+      if (params.pageSize !== undefined) qs.set('pageSize', String(params.pageSize));
+      if (params.search) qs.set('search', params.search);
+      if (params.isActive !== undefined) qs.set('isActive', String(params.isActive));
+      const query = qs.toString();
+      const raw = await request<unknown>('GET', `/categories${query ? `?${query}` : ''}`);
       if (Array.isArray(raw)) return sanitizeArray(raw, sanitizeCategory);
       if (raw && typeof raw === 'object') {
         const r = raw as Record<string, unknown>;
@@ -697,6 +737,28 @@ export const api = {
     async getById(id: string): Promise<Category | null> {
       const raw = await request<unknown>('GET', `/categories/${encodeURIComponent(id)}`);
       return sanitizeCategory(raw);
+    },
+
+    async listSubcategories(
+      parentId: string,
+      params: { page?: number; pageSize?: number; search?: string; isActive?: boolean } = {},
+    ): Promise<Category[]> {
+      const qs = new URLSearchParams();
+      if (params.page !== undefined) qs.set('page', String(params.page));
+      if (params.pageSize !== undefined) qs.set('pageSize', String(params.pageSize));
+      if (params.search) qs.set('search', params.search);
+      if (params.isActive !== undefined) qs.set('isActive', String(params.isActive));
+      const query = qs.toString();
+      const raw = await request<unknown>(
+        'GET',
+        `/categories/${encodeURIComponent(parentId)}/subcategories${query ? `?${query}` : ''}`,
+      );
+      if (Array.isArray(raw)) return sanitizeArray(raw, sanitizeCategory);
+      if (raw && typeof raw === 'object') {
+        const r = raw as Record<string, unknown>;
+        return sanitizeArray(r.items ?? r.data ?? r.subcategories, sanitizeCategory);
+      }
+      return [];
     },
 
     async create(input: CreateCategoryInput): Promise<Category> {
@@ -724,7 +786,7 @@ export const api = {
         const params = new URLSearchParams();
         if (country) params.set('country', country);
         const query = params.toString();
-        const raw = await request<unknown>('GET', `/branches${query ? `?${query}` : ''}`);
+        const raw = await request<unknown>('GET', `/api/branches${query ? `?${query}` : ''}`);
         if (Array.isArray(raw)) return sanitizeArray(raw, sanitizeBranch);
         if (raw && typeof raw === 'object') {
           const r = raw as Record<string, unknown>;
@@ -737,26 +799,26 @@ export const api = {
     },
 
     async getById(id: string): Promise<Branch | null> {
-      const raw = await request<unknown>('GET', `/branches/${encodeURIComponent(id)}`);
+      const raw = await request<unknown>('GET', `/api/branches/${encodeURIComponent(id)}`);
       return sanitizeBranch(raw);
     },
 
     async create(payload: CreateBranchRequest): Promise<Branch> {
-      const raw = await request<unknown>('POST', '/branches', payload);
+      const raw = await request<unknown>('POST', '/api/branches', payload);
       const branch = sanitizeBranch(raw);
       if (!branch) throw new ApiError(500, { message: 'Invalid branch response from server' });
       return branch;
     },
 
     async update(id: string, payload: UpdateBranchRequest): Promise<Branch> {
-      const raw = await request<unknown>('PUT', `/branches/${encodeURIComponent(id)}`, payload);
+      const raw = await request<unknown>('PUT', `/api/branches/${encodeURIComponent(id)}`, payload);
       const branch = sanitizeBranch(raw);
       if (!branch) throw new ApiError(500, { message: 'Invalid branch response from server' });
       return branch;
     },
 
     async delete(id: string): Promise<void> {
-      await request<void>('DELETE', `/branches/${encodeURIComponent(id)}`);
+      await request<void>('DELETE', `/api/branches/${encodeURIComponent(id)}`);
     },
   },
 
@@ -770,7 +832,7 @@ export const api = {
       if (params.page !== undefined) qs.set('page', String(params.page));
       if (params.pageSize !== undefined) qs.set('pageSize', String(params.pageSize));
       if (params.branchId) qs.set('branchId', params.branchId);
-      const raw = await request<unknown>('GET', `/branches/employees?${qs.toString()}`);
+      const raw = await request<unknown>('GET', `/api/branches/employees?${qs.toString()}`);
       if (raw && typeof raw === 'object') {
         const r = raw as Record<string, unknown>;
         const items = Array.isArray(r.items)
@@ -799,18 +861,18 @@ export const api = {
     },
 
     async create(payload: CreateBranchEmployeeRequest): Promise<BranchEmployee> {
-      const raw = await request<unknown>('POST', '/branches/employees', payload);
+      const raw = await request<unknown>('POST', '/api/branches/employees', payload);
       const employee = sanitizeBranchEmployee(raw);
       if (!employee) throw new ApiError(500, { message: 'Invalid employee response from server' });
       return employee;
     },
 
     async changeRole(id: string, payload: ChangeEmployeeRoleRequest): Promise<void> {
-      await request<void>('PUT', `/branches/employees/${encodeURIComponent(id)}/role`, payload);
+      await request<void>('PUT', `/api/branches/employees/${encodeURIComponent(id)}/role`, payload);
     },
 
     async getRoles(): Promise<EmployeeRole[]> {
-      const raw = await request<unknown>('GET', '/branches/employees/roles');
+      const raw = await request<unknown>('GET', '/api/branches/employees/roles');
       if (Array.isArray(raw)) {
         return sanitizeArray(raw, sanitizeEmployeeRole);
       }
@@ -827,21 +889,35 @@ export const api = {
       const params = new URLSearchParams();
       params.set('limit', String(limit));
       if (cursor) params.set('cursor', cursor);
-      const raw = await request<unknown>('GET', `/employees?${params.toString()}`);
+      const raw = await request<unknown>('GET', `/api/employees?${params.toString()}`);
       if (raw && typeof raw === 'object') {
         const r = raw as Record<string, unknown>;
-        const items = Array.isArray(r.items) ? r.items : Array.isArray(raw) ? (raw as unknown[]) : [];
-        const nextCursor = typeof r.nextCursor === 'string' ? r.nextCursor : null;
+        const items = Array.isArray(r.items)
+          ? r.items
+          : Array.isArray(r.data)
+          ? r.data
+          : Array.isArray(r.employees)
+          ? r.employees
+          : [];
+        const nextCursor =
+          typeof r.nextCursor === 'string'
+            ? r.nextCursor
+            : typeof r.cursor === 'string'
+            ? r.cursor
+            : null;
         return {
           items: sanitizeArray(items, sanitizeEmployee),
           nextCursor,
         };
       }
+      if (Array.isArray(raw)) {
+        return { items: sanitizeArray(raw, sanitizeEmployee), nextCursor: null };
+      }
       return { items: [], nextCursor: null };
     },
 
     async getById(id: string): Promise<EmployeeDetails | null> {
-      const raw = await request<unknown>('GET', `/employees/${encodeURIComponent(id)}`);
+      const raw = await request<unknown>('GET', `/api/employees/${encodeURIComponent(id)}`);
       const base = sanitizeEmployee(raw);
       if (!base) return null;
       // Try to attach branch if branchId is present
@@ -857,20 +933,20 @@ export const api = {
     },
 
     async update(id: string, payload: EmployeeUpdateRequest): Promise<Employee> {
-      const raw = await request<unknown>('PUT', `/employees/${encodeURIComponent(id)}`, payload);
+      const raw = await request<unknown>('PUT', `/api/employees/${encodeURIComponent(id)}`, payload);
       const employee = sanitizeEmployee(raw);
       if (!employee) throw new ApiError(500, { message: 'Invalid employee response from server' });
       return employee;
     },
 
     async delete(id: string): Promise<void> {
-      await request<void>('DELETE', `/employees/${encodeURIComponent(id)}`);
+      await request<void>('DELETE', `/api/employees/${encodeURIComponent(id)}`);
     },
   },
 
   roles: {
     async list(): Promise<ApiRole[]> {
-      const raw = await request<unknown>('GET', '/roles');
+      const raw = await request<unknown>('GET', '/api/roles');
       if (Array.isArray(raw)) {
         return raw.filter((r): r is string => typeof r === 'string');
       }
@@ -880,7 +956,7 @@ export const api = {
 
   users: {
     async changeRole(userId: string, newRole: string): Promise<void> {
-      await request<void>('PUT', `/users/${encodeURIComponent(userId)}/role?newRole=${encodeURIComponent(newRole)}`);
+      await request<void>('PUT', `/api/users/${encodeURIComponent(userId)}/role?newRole=${encodeURIComponent(newRole)}`);
     },
   },
 
@@ -913,7 +989,7 @@ export const api = {
 
   addresses: {
     async list(): Promise<Address[]> {
-      const raw = await request<unknown>('GET', '/me/addresses');
+      const raw = await request<unknown>('GET', '/api/me/addresses');
       if (Array.isArray(raw)) return sanitizeArray(raw, sanitizeAddress);
       if (raw && typeof raw === 'object') {
         const r = raw as Record<string, unknown>;
@@ -923,30 +999,30 @@ export const api = {
     },
 
     async getById(id: string): Promise<Address | null> {
-      const raw = await request<unknown>('GET', `/me/addresses/${encodeURIComponent(id)}`);
+      const raw = await request<unknown>('GET', `/api/me/addresses/${encodeURIComponent(id)}`);
       return sanitizeAddress(raw);
     },
 
     async create(payload: CreateAddressRequest): Promise<Address> {
-      const raw = await request<unknown>('POST', '/me/addresses', payload);
+      const raw = await request<unknown>('POST', '/api/me/addresses', payload);
       const address = sanitizeAddress(raw);
       if (!address) throw new ApiError(500, { message: 'Invalid address response from server' });
       return address;
     },
 
     async update(id: string, payload: UpdateAddressRequest): Promise<Address> {
-      const raw = await request<unknown>('PUT', `/me/addresses/${encodeURIComponent(id)}`, payload);
+      const raw = await request<unknown>('PUT', `/api/me/addresses/${encodeURIComponent(id)}`, payload);
       const address = sanitizeAddress(raw);
       if (!address) throw new ApiError(500, { message: 'Invalid address response from server' });
       return address;
     },
 
     async delete(id: string): Promise<void> {
-      await request<void>('DELETE', `/me/addresses/${encodeURIComponent(id)}`);
+      await request<void>('DELETE', `/api/me/addresses/${encodeURIComponent(id)}`);
     },
 
     async setDefault(id: string): Promise<void> {
-      await request<void>('PUT', `/me/addresses/${encodeURIComponent(id)}/default`);
+      await request<void>('PUT', `/api/me/addresses/${encodeURIComponent(id)}/default`);
     },
   },
 

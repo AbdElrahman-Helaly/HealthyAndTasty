@@ -1,7 +1,6 @@
 /**
  * Country configuration.
- * Each entry maps a country code to its display label and API prefix.
- * All API calls go through the prefix — never hardcode /api/eg directly.
+ * The supported countries are intentionally fixed locally.
  */
 
 export interface CountryConfig {
@@ -13,17 +12,17 @@ export interface CountryConfig {
 export const COUNTRIES: Record<string, CountryConfig> = {
   eg: {
     code: 'eg',
-    label: 'مصر',
+    label: 'Egypt',
     apiPrefix: '/api/eg',
   },
   sa: {
     code: 'sa',
-    label: 'السعودية',
+    label: 'Saudi Arabia',
     apiPrefix: '/api/sa',
   },
   uae: {
     code: 'uae',
-    label: 'الإمارات',
+    label: 'UAE',
     apiPrefix: '/api/uae',
   },
 } as const;

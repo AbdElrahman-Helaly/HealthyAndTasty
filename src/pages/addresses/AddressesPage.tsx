@@ -7,12 +7,19 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { LoadingSkeleton } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { FormDrawer } from '@/components/shared/FormDrawer';
 import { useAddresses } from '@/hooks/useAddresses';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import type { Address, CreateAddressRequest, UpdateAddressRequest } from '@/types';
+
+const COUNTRY_OPTIONS = [
+  { value: 'EG', label: 'Egypt' },
+  { value: 'SA', label: 'Saudi Arabia' },
+  { value: 'AE', label: 'UAE' },
+];
 
 // ---------------------------------------------------------------------------
 // Form value types
@@ -167,7 +174,7 @@ function CreateAddressDrawer({ open, onClose, onCreate }: CreateDrawerProps) {
       line2: '',
       city: '',
       region: '',
-      country: '',
+      country: 'EG',
       postalCode: '',
       phoneE164: '',
       latitude: '',
@@ -246,11 +253,17 @@ function CreateAddressDrawer({ open, onClose, onCreate }: CreateDrawerProps) {
           error={errors.city?.message}
         />
         <Input label={t('addresses.region')} {...register('region')} />
-        <Input
+        <Select
           label={t('addresses.country')}
           {...register('country', { required: t('addresses.country') + ' is required' })}
           error={errors.country?.message}
-        />
+        >
+          {COUNTRY_OPTIONS.map((country) => (
+            <option key={country.value} value={country.value}>
+              {country.label}
+            </option>
+          ))}
+        </Select>
         <Input label={t('addresses.postalCode')} {...register('postalCode')} />
         <Input label={t('addresses.phoneE164')} {...register('phoneE164')} placeholder="+10001234567" />
         <div className="grid grid-cols-2 gap-3">
@@ -375,11 +388,17 @@ function EditAddressDrawer({ address, open, onClose, onUpdate }: EditDrawerProps
           error={errors.city?.message}
         />
         <Input label={t('addresses.region')} {...register('region')} />
-        <Input
+        <Select
           label={t('addresses.country')}
           {...register('country', { required: t('addresses.country') + ' is required' })}
           error={errors.country?.message}
-        />
+        >
+          {COUNTRY_OPTIONS.map((country) => (
+            <option key={country.value} value={country.value}>
+              {country.label}
+            </option>
+          ))}
+        </Select>
         <Input label={t('addresses.postalCode')} {...register('postalCode')} />
         <Input label={t('addresses.phoneE164')} {...register('phoneE164')} placeholder="+10001234567" />
         <div className="grid grid-cols-2 gap-3">

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Ban, RefreshCw, Eye } from 'lucide-react';
+import { Plus, Pencil, RefreshCw, Eye, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { SearchFilters, SelectFilter } from '@/components/shared/SearchFilters';
@@ -9,6 +9,7 @@ import { FormDrawer } from '@/components/shared/FormDrawer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/Badge';
 import { LoadingSkeleton } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
@@ -30,7 +31,7 @@ interface CreateBranchDrawerProps {
 
 function CreateBranchDrawer({ open, onClose, onCreated }: CreateBranchDrawerProps) {
   const { t } = useTranslation();
-  const [form, setForm] = useState<Partial<CreateBranchRequest>>({});
+  const [form, setForm] = useState<Partial<CreateBranchRequest>>({ country: 'EG' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -56,7 +57,7 @@ function CreateBranchDrawer({ open, onClose, onCreated }: CreateBranchDrawerProp
     try {
       await createBranch({ code, name, country, latitude, longitude });
       setSuccess(true);
-      setForm({});
+      setForm({ country: 'EG' });
       setTimeout(() => setSuccess(false), 3000);
       onCreated();
       onClose();
@@ -68,7 +69,7 @@ function CreateBranchDrawer({ open, onClose, onCreated }: CreateBranchDrawerProp
   };
 
   const handleClose = () => {
-    setForm({});
+    setForm({ country: 'EG' });
     setError(null);
     setSuccess(false);
     onClose();
@@ -109,12 +110,15 @@ function CreateBranchDrawer({ open, onClose, onCreated }: CreateBranchDrawerProp
           onChange={set('name')}
           placeholder="e.g. Cairo Downtown"
         />
-        <Input
+        <Select
           label="Country Code"
           value={form.country ?? ''}
-          onChange={set('country')}
-          placeholder="e.g. EG"
-        />
+          onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+        >
+          <option value="EG">Egypt</option>
+          <option value="SA">Saudi Arabia</option>
+          <option value="AE">UAE</option>
+        </Select>
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Latitude"
@@ -297,9 +301,9 @@ export function BranchesPage() {
   // Drawer state
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Branch | null>(null);
-  const [deactivateTarget, setDeactivateTarget] = useState<Branch | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
-  const [deactivateError, setDeactivateError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!branches) return [];
@@ -317,19 +321,19 @@ export function BranchesPage() {
     });
   }, [branches, search, statusFilter]);
 
-  const handleDeactivateConfirm = useCallback(async () => {
-    if (!deactivateTarget) return;
-    setDeactivating(true);
-    setDeactivateError(null);
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
     try {
-      await deleteBranch(deactivateTarget.id);
-      setDeactivateTarget(null);
+      await deleteBranch(deleteTarget.id);
+      setDeleteTarget(null);
       refetch();
     } catch (err) {
-      setDeactivateError(err instanceof Error ? err.message : 'Failed to deactivate branch');
-      setDeactivating(false);
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete branch');
+      setDeleting(false);
     }
-  }, [deactivateTarget, refetch]);
+  }, [deleteTarget, refetch]);
 
   const countryOptions = useMemo(() => {
     const opts = [{ value: '', label: 'All Countries' }];
@@ -393,11 +397,11 @@ export function BranchesPage() {
           <Button
             variant="ghost"
             size="icon"
-            title="Deactivate"
+            title={t('common.delete')}
             className="text-error hover:bg-error/10"
-            onClick={() => setDeactivateTarget(row)}
+            onClick={() => setDeleteTarget(row)}
           >
-            <Ban className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -488,20 +492,20 @@ export function BranchesPage() {
         onSaved={refetch}
       />
 
-      {/* Deactivate confirmation */}
+      {/* Delete confirmation */}
       <ConfirmDialog
-        open={deactivateTarget !== null}
+        open={deleteTarget !== null}
         onClose={() => {
-          setDeactivateTarget(null);
-          setDeactivateError(null);
+          setDeleteTarget(null);
+          setDeleteError(null);
         }}
-        onConfirm={handleDeactivateConfirm}
-        loading={deactivating}
-        title="Deactivate Branch"
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+        title="Delete Branch"
         message={
-          deactivateError
-            ? `Error: ${deactivateError}. Try again?`
-            : `Deactivate "${deactivateTarget?.name}"? This action will mark the branch as inactive.`
+          deleteError
+            ? `Error: ${deleteError}. Try again?`
+            : `Delete "${deleteTarget?.name}"? This action cannot be undone.`
         }
       />
     </div>

@@ -215,7 +215,7 @@ export interface Product {
   id: string;
   sku: string;
   name: string;
-  nameAr: string;
+  nameAr?: string;
   categoryId: string;
   categoryName: string;
   countryCode: string;
@@ -241,6 +241,13 @@ export interface ProductListParams {
   supplier?: string;
   minPrice?: number;
   maxPrice?: number;
+}
+
+export interface CategoryListParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  isActive?: boolean;
 }
 
 export interface CreateProductBody {

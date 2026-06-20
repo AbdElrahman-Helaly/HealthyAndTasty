@@ -25,6 +25,13 @@ import {
 import { formatDate } from '@/lib/utils';
 import type { BranchEmployee, CreateBranchEmployeeRequest } from '@/types';
 
+function validateEmployeePassword(password: string): string | null {
+  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter.';
+  if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter.';
+  if (!/\d/.test(password)) return 'Password must include at least one number.';
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Add Employee Drawer
 // ---------------------------------------------------------------------------
@@ -55,6 +62,11 @@ function AddEmployeeDrawer({ branchId, open, onClose, onCreated }: AddEmployeeDr
   const handleSave = async () => {
     if (!form.displayName || !form.employeeCode || !form.password) {
       setError('All fields are required.');
+      return;
+    }
+    const passwordError = validateEmployeePassword(form.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     setSaving(true);
@@ -127,8 +139,11 @@ function AddEmployeeDrawer({ branchId, open, onClose, onCreated }: AddEmployeeDr
           type="password"
           value={form.password}
           onChange={set('password')}
-          placeholder="Temporary password"
+          placeholder="e.g. 123456789Aa"
         />
+        <p className="text-xs text-on-surface-variant">
+          Must include uppercase, lowercase, and numbers.
+        </p>
       </div>
     </FormDrawer>
   );

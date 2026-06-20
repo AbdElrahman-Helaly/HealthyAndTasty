@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, FolderTree, Search } from 'lucide-react';
+import { Plus, Pencil, FolderTree, Search, Package } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { FormDrawer } from '@/components/shared/FormDrawer';
+import { DataTable } from '@/components/shared/DataTable';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,7 +21,8 @@ import {
   createCategory,
   updateCategory,
 } from '@/services/categoriesApi';
-import type { Category } from '@/types';
+import { getProducts } from '@/services/productsApi';
+import type { Category, PaginatedResponse, Product } from '@/types';
 import type { CreateCategoryBody, UpdateCategoryBody } from '@/services/categoriesApi';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +35,10 @@ function useDebounced<T>(value: T, ms: number): T {
     return () => clearTimeout(timer);
   }, [value, ms]);
   return debounced;
+}
+
+function emptyProductPage(): PaginatedResponse<Product> {
+  return { items: [], total: 0, page: 1, pageSize: 50 };
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +347,100 @@ function CategoryPanel({
   );
 }
 
+interface SubcategoryProductsPanelProps {
+  subcategory: Category | null;
+  products: Product[];
+  total: number;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+function SubcategoryProductsPanel({
+  subcategory,
+  products,
+  total,
+  isLoading,
+  error,
+}: SubcategoryProductsPanelProps) {
+  const { t } = useTranslation();
+
+  const columns = [
+    {
+      key: 'sku',
+      header: t('products.sku'),
+      render: (row: Product) => <span className="font-mono text-xs text-primary">{row.sku || '-'}</span>,
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      render: (row: Product) => <span className="font-medium">{row.name}</span>,
+    },
+    {
+      key: 'price',
+      header: t('products.price'),
+      render: (row: Product) => (
+        <span className="tabular-nums">
+          {row.price.toFixed(2)} {row.currency}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: t('common.status'),
+      render: (row: Product) => <StatusBadge active={row.isActive} />,
+    },
+  ];
+
+  return (
+    <Card padding="none" className="flex flex-col overflow-hidden md:col-span-2 lg:col-span-1">
+      <div className="flex items-center justify-between gap-2 border-b border-outline-variant/40 px-4 py-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-on-surface">
+            {subcategory ? subcategory.name : 'Products'}
+          </p>
+          <p className="truncate text-xs text-on-surface-variant">
+            {subcategory ? `${total} products` : 'Select a subcategory'}
+          </p>
+        </div>
+        <Package className="h-4 w-4 shrink-0 text-primary" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3">
+        {!subcategory && (
+          <EmptyState
+            icon={<Package className="h-6 w-6" />}
+            title="Select a subcategory"
+            description="Products will appear here."
+          />
+        )}
+
+        {subcategory && error && !isLoading && (
+          <div className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">
+            {error.message}
+          </div>
+        )}
+
+        {subcategory && isLoading && (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <LoadingSkeleton key={i} className="h-11 w-full" />
+            ))}
+          </div>
+        )}
+
+        {subcategory && !isLoading && !error && (
+          <DataTable
+            columns={columns}
+            data={products}
+            keyExtractor={(row) => row.id}
+            emptyMessage={t('products.noProducts')}
+          />
+        )}
+      </div>
+    </Card>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main CategoriesPage
 // ---------------------------------------------------------------------------
@@ -364,6 +464,7 @@ export function CategoriesPage() {
 
   // Selected parent for subcategory panel
   const [selectedParent, setSelectedParent] = useState<Category | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<Category | null>(null);
 
   // Subcategories
   const {
@@ -378,6 +479,23 @@ export function CategoriesPage() {
     [selectedParent?.id],
   );
   const subcategories = subData ?? [];
+
+  useEffect(() => {
+    setSelectedSubcategory(null);
+  }, [selectedParent?.id]);
+
+  const {
+    data: productPage,
+    isLoading: loadingProducts,
+    error: productsError,
+  } = useAsync(
+    () =>
+      selectedSubcategory
+        ? getProducts({ page: 1, pageSize: 50, categoryId: selectedSubcategory.id })
+        : Promise.resolve(emptyProductPage()),
+    [selectedSubcategory?.id],
+  );
+  const subcategoryProducts = productPage?.items ?? [];
 
   // Form drawer state
   const [formOpen, setFormOpen] = useState(false);
@@ -423,7 +541,7 @@ export function CategoriesPage() {
         subtitle={t('categories.subtitle')}
       />
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-[1fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {/* Right panel (RTL: start side) — Main categories */}
         <CategoryPanel
           title={t('categories.mainCategories')}
@@ -443,6 +561,8 @@ export function CategoriesPage() {
           subtitle={selectedParent ? selectedParent.name : undefined}
           categories={subcategories}
           isLoading={loadingSub && !!selectedParent}
+          selectedId={selectedSubcategory?.id}
+          onSelect={setSelectedSubcategory}
           onAdd={openCreateSub}
           addLabel={t('categories.createSub')}
           emptyTitle={
@@ -452,6 +572,14 @@ export function CategoriesPage() {
           }
           onEdit={openEdit}
           parentMap={parentNameMap}
+        />
+
+        <SubcategoryProductsPanel
+          subcategory={selectedSubcategory}
+          products={subcategoryProducts}
+          total={productPage?.total ?? 0}
+          isLoading={loadingProducts && !!selectedSubcategory}
+          error={productsError}
         />
       </div>
 
