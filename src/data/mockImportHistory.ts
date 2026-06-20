@@ -1,0 +1,48 @@
+import type { ImportRecord } from '@/types';
+
+export const mockImportHistory: ImportRecord[] = [
+  {
+    id: 'imp-001',
+    fileName: 'products_june_2026.xlsx',
+    branchId: 'br-001',
+    branchName: 'Cairo Downtown',
+    employeeId: 'emp-001',
+    employeeName: 'Ahmed Hassan',
+    status: 'success',
+    productsImported: 145,
+    createdAt: '2026-06-08T09:30:00Z',
+  },
+  {
+    id: 'imp-002',
+    fileName: 'inventory_update.xlsx',
+    branchId: 'br-003',
+    branchName: 'Riyadh Olaya',
+    employeeId: 'emp-004',
+    employeeName: 'Khalid Al-Rashid',
+    status: 'partial',
+    productsImported: 89,
+    createdAt: '2026-06-07T14:20:00Z',
+  },
+  {
+    id: 'imp-003',
+    fileName: 'new_items_may.xlsx',
+    branchId: 'br-001',
+    branchName: 'Cairo Downtown',
+    employeeId: 'emp-002',
+    employeeName: 'Fatima Ali',
+    status: 'failed',
+    productsImported: 0,
+    createdAt: '2026-06-06T11:00:00Z',
+  },
+  {
+    id: 'imp-004',
+    fileName: 'catalog_q2.xlsx',
+    branchId: 'br-005',
+    branchName: 'Dubai Marina',
+    employeeId: 'emp-005',
+    employeeName: 'Layla Al-Maktoum',
+    status: 'success',
+    productsImported: 210,
+    createdAt: '2026-06-05T08:45:00Z',
+  },
+];
