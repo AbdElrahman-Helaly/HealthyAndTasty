@@ -5,6 +5,7 @@
 import { api } from '@/lib/api';
 import type {
   ApiRole,
+  CreateEmployeeRequest,
   CursorPagedResponse,
   Employee,
   EmployeeDetails,
@@ -29,6 +30,13 @@ export async function getEmployees(
  */
 export async function getEmployeeById(id: string): Promise<EmployeeDetails | null> {
   return api.employees.getById(id);
+}
+
+/**
+ * Create a new employee.
+ */
+export async function createEmployee(payload: CreateEmployeeRequest): Promise<Employee> {
+  return api.employees.create(payload);
 }
 
 /**

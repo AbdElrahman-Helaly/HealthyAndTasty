@@ -13,6 +13,7 @@ import type {
   CreateBranchEmployeeRequest,
   CreateBranchRequest,
   CreateCategoryInput,
+  CreateEmployeeRequest,
   CursorPagedResponse,
   Employee,
   EmployeeDetails,
@@ -915,6 +916,13 @@ export const api = {
         return { items: sanitizeArray(raw, sanitizeEmployee), nextCursor: null };
       }
       return { items: [], nextCursor: null };
+    },
+
+    async create(payload: CreateEmployeeRequest): Promise<Employee> {
+      const raw = await request<unknown>('POST', '/api/employees', payload);
+      const employee = sanitizeEmployee(raw);
+      if (!employee) throw new ApiError(500, { message: 'Invalid employee response from server' });
+      return employee;
     },
 
     async getById(id: string): Promise<EmployeeDetails | null> {

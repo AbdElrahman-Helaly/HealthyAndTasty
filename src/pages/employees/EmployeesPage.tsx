@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { Eye, Pencil, Trash2, RefreshCw, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { FormDrawer } from '@/components/shared/FormDrawer';
@@ -11,7 +11,7 @@ import { LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useEmployeeDetails, useEmployees, useRoles } from '@/hooks/useEmployeeDetails';
 import { useBranches } from '@/hooks/useBranchDetails';
-import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
+import { createEmployee, deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { formatDate } from '@/lib/utils';
 import type { Employee, EmployeeUpdateRequest } from '@/types';
@@ -32,6 +32,115 @@ function SkeletonRows({ count = 8 }: { count?: number }) {
         </tr>
       ))}
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Create Employee Drawer
+// ---------------------------------------------------------------------------
+interface CreateDrawerProps {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
+  const { t } = useTranslation();
+  const { data: branches, isLoading: branchesLoading } = useBranches();
+
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneE164: '',
+    employeeCode: '',
+    employeeBranchId: '',
+    password: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set =
+    (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSave = async () => {
+    if (!form.employeeCode || !form.password || !form.firstName) {
+      setError('Employee code, password, and first name are required');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await createEmployee(form);
+      setForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneE164: '',
+        employeeCode: '',
+        employeeBranchId: '',
+        password: '',
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create employee');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title="إضافة موظف جديد"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm">
+            {error && <span className="text-error">{error}</span>}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button loading={saving} onClick={handleSave}>
+              {t('common.save')}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="الاسم الأول" value={form.firstName} onChange={set('firstName')} />
+          <Input label="الاسم الأخير" value={form.lastName} onChange={set('lastName')} />
+        </div>
+        <Input label="البريد الإلكتروني" type="email" value={form.email} onChange={set('email')} />
+        <Input label="رقم الهاتف" value={form.phoneE164} onChange={set('phoneE164')} placeholder="+10001234567" />
+        <Input label="كود الموظف" value={form.employeeCode} onChange={set('employeeCode')} placeholder="EMP-001" />
+        <Input label="كلمة المرور" type="password" value={form.password} onChange={set('password')} />
+
+        <div>
+          <label className="text-sm font-semibold text-gray-800">{t('nav.branches')}</label>
+          <select
+            value={form.employeeBranchId}
+            onChange={set('employeeBranchId')}
+            disabled={branchesLoading}
+            className="mt-1.5 h-[48px] w-full rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-4 text-sm text-gray-900 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
+          >
+            <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
+            {(branches ?? []).map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name} ({b.countryCode})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </FormDrawer>
   );
 }
 
@@ -302,6 +411,7 @@ export function EmployeesPage() {
   const { items, isLoading, isFetchingMore, error, refetch, loadMore, hasMore } = useEmployees();
 
   // Drawer state
+  const [createOpen, setCreateOpen] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
@@ -398,7 +508,16 @@ export function EmployeesPage() {
 
   return (
     <div>
-      <PageHeader title={t('employees.title')} subtitle={t('employees.subtitle')} />
+      <PageHeader
+        title={t('employees.title')}
+        subtitle={t('employees.subtitle')}
+        actions={
+          <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            إضافة موظف
+          </Button>
+        }
+      />
 
       <Card padding="none">
         {/* Error state */}
@@ -463,6 +582,13 @@ export function EmployeesPage() {
           </div>
         )}
       </Card>
+
+      {/* Create Drawer */}
+      <CreateEmployeeDrawer
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSaved={() => refetch()}
+      />
 
       {/* View Drawer */}
       <ViewEmployeeDrawer
