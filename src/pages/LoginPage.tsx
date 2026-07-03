@@ -5,8 +5,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { User, Lock, LogIn } from 'lucide-react';
 import { AuthLayout } from '@/layouts/AuthLayout';
-import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
@@ -52,34 +52,36 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
-        <Card
-          padding="lg"
-          className="shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100/80 rounded-2xl bg-white/90 backdrop-blur-md"
-        >
-          {/* 🌟 تعديل اللوجو ليصبح بارزاً وواضحاً تماماً 🌟 */}
+        <div className="bg-white rounded-[24px] p-8 sm:p-10 shadow-[0_20px_60px_rgba(64,41,110,0.10),0_8px_20px_rgba(64,41,110,0.06)] border border-purple-100/60">
+          {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <div className="flex h-20 w-auto min-w-[120px] px-6 items-center justify-center rounded-2xl bg-slate-950 shadow-md ring-1 ring-white/10 transition-transform hover:scale-105 duration-300">
-              {/* ملحوظة: لو اللوجو بتاعك أصلاً غامق جداً، استبدل bg-slate-950 بـ bg-slate-50 */}
+            <div className="flex h-24 w-auto min-w-[140px] px-8 items-center justify-center rounded-2xl bg-slate-950 shadow-lg ring-1 ring-white/10 transition-transform hover:scale-105 duration-300">
               <img
                 src="/logo.png"
                 alt={branding.name}
-                className="h-12 w-auto max-w-[180px] object-contain"
+                className="h-16 w-auto max-w-[220px] object-contain"
               />
             </div>
           </div>
 
+          {/* Title & subtitle */}
           <div className="text-center mb-8">
-            <h2 className="mb-2 text-2xl font-bold text-gray-900 tracking-tight">{t('auth.loginTitle')}</h2>
-            <p className="text-sm text-gray-500 font-medium">{t('auth.loginSubtitle')}</p>
+            <h2 className="mb-2 text-[28px] font-bold text-gray-900 tracking-tight">
+              {t('auth.loginTitle')}
+            </h2>
+            <p className="text-sm text-gray-500 font-medium leading-relaxed">
+              {t('auth.loginSubtitle')}
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
             <Input
               label={t('auth.employeeCode')}
               type="text"
               autoComplete="username"
               placeholder="EMP-001"
               dir="ltr"
+              icon={<User className="h-5 w-5" />}
               error={errors.employeeCode?.message}
               {...register('employeeCode')}
             />
@@ -87,6 +89,7 @@ export function LoginPage() {
               label={t('auth.password')}
               type="password"
               autoComplete="current-password"
+              icon={<Lock className="h-5 w-5" />}
               error={errors.password?.message}
               {...register('password')}
             />
@@ -106,12 +109,13 @@ export function LoginPage() {
               type="submit"
               size="lg"
               loading={isLoading}
-              className="w-full mt-3 shadow-md active:scale-[0.98] transition-all duration-150"
+              className="w-full h-14 font-semibold text-base rounded-[14px] shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
             >
+              <LogIn className="h-5 w-5" />
               {t('auth.signIn')}
             </Button>
           </form>
-        </Card>
+        </div>
       </motion.div>
     </AuthLayout>
   );

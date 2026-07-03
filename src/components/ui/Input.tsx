@@ -5,29 +5,41 @@ import { forwardRef } from 'react';
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  icon?: React.ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className, id, ...props }, ref) => {
+  ({ label, error, icon, className, id, ...props }, ref) => {
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-on-surface">
+          <label htmlFor={inputId} className="text-sm font-semibold text-gray-700">
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={cn(
-            'h-11 rounded-lg border border-outline-variant bg-surface px-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/30',
-            error && 'border-error focus:ring-error/30',
-            className,
+        <div className="relative">
+          {icon && (
+            <div className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              {icon}
+            </div>
           )}
-          {...props}
-        />
-        {error && <p className="text-xs text-error">{error}</p>}
+          <input
+            ref={ref}
+            id={inputId}
+            className={cn(
+              'h-12 w-full rounded-xl border bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500',
+              icon && 'ps-10',
+              error
+                ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500'
+                : 'border-gray-200 hover:border-gray-300',
+              className,
+            )}
+            {...props}
+          />
+        </div>
+        {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
       </div>
     );
   },
