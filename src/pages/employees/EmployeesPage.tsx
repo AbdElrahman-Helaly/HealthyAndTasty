@@ -127,7 +127,7 @@ function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
             <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
             {(branches ?? []).map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.countryCode})
+                {b.name}
               </option>
             ))}
           </select>
@@ -286,7 +286,7 @@ function EditEmployeeDrawer({ employeeId, open, onClose, onSaved }: EditDrawerPr
                 <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
                 {(branches ?? []).map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.countryCode})
+                    {b.name}
                   </option>
                 ))}
               </select>
