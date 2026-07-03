@@ -14,6 +14,7 @@ import { useBranches } from '@/hooks/useBranchDetails';
 import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
 import { createBranchEmployee } from '@/services/branch.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useCountry } from '@/context/CountryContext';
 import { formatDate } from '@/lib/utils';
 import type { Employee, EmployeeUpdateRequest } from '@/types';
 
@@ -47,7 +48,8 @@ interface CreateDrawerProps {
 
 function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
   const { t } = useTranslation();
-  const { data: branches, isLoading: branchesLoading } = useBranches();
+  const { selectedCountry } = useCountry();
+  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
 
   const [form, setForm] = useState({
     displayName: '',
@@ -149,9 +151,10 @@ interface EditDrawerProps {
 
 function EditEmployeeDrawer({ employeeId, open, onClose, onSaved }: EditDrawerProps) {
   const { t } = useTranslation();
+  const { selectedCountry } = useCountry();
   const { data: employee, isLoading, error, refetch } = useEmployeeDetails(employeeId ?? undefined);
   const { data: roles, isLoading: rolesLoading } = useRoles();
-  const { data: branches, isLoading: branchesLoading } = useBranches();
+  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
 
   const [form, setForm] = useState<Partial<EmployeeUpdateRequest>>({});
   const [saving, setSaving] = useState(false);
