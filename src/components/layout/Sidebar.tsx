@@ -87,7 +87,7 @@ function SidebarNavItem({ item, collapsed, onMobileClose }: { item: NavItem; col
           collapsed ? 'justify-center mx-2' : 'mx-2',
           isActive
             ? 'bg-sidebar-item-active text-sidebar-text-active'
-            : 'text-sidebar-text/70 hover:bg-sidebar-item-hover hover:text-sidebar-text hover:translate-x-0.5 rtl:hover:-translate-x-0.5'
+            : 'text-sidebar-text hover:bg-sidebar-item-hover hover:text-white/90'
         )
       }
     >
@@ -97,7 +97,7 @@ function SidebarNavItem({ item, collapsed, onMobileClose }: { item: NavItem; col
             <motion.span
               layoutId={collapsed ? 'activeTabCollapsed' : 'activeTab'}
               className={cn(
-                'absolute top-1/2 -translate-y-1/2 w-[3px] rounded-full bg-primary',
+                'absolute top-1/2 -translate-y-1/2 w-[3px] rounded-full bg-sidebar-accent',
                 isRtl ? 'right-0' : 'left-0'
               )}
               style={{ height: '20px' }}
@@ -106,7 +106,7 @@ function SidebarNavItem({ item, collapsed, onMobileClose }: { item: NavItem; col
           )}
           <item.icon className={cn(
             'h-[18px] w-[18px] shrink-0 transition-all duration-150',
-            isActive ? 'text-sidebar-icon-active' : 'text-sidebar-icon/60 group-hover:text-sidebar-icon'
+            isActive ? 'text-sidebar-icon-active' : 'text-sidebar-icon group-hover:text-white/70'
           )} />
           {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
         </>
@@ -127,7 +127,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
       animate={{ width }}
       transition={{ duration: 0.25, type: 'spring', bounce: 0, damping: 22 }}
       className={cn(
-        'relative flex h-screen shrink-0 flex-col bg-sidebar-bg shadow-sidebar',
+        'relative flex h-screen shrink-0 flex-col bg-sidebar-bg',
         !mobile && 'sticky top-0',
         mobile && 'fixed inset-y-0 start-0 z-50 shadow-2xl'
       )}
@@ -137,7 +137,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
         <button
           onClick={onToggle}
           title={collapsed ? t('nav.expand') : t('nav.collapse')}
-          className="absolute -end-3 top-[22px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-white text-sidebar-text/50 shadow-sm transition-all hover:border-primary/30 hover:text-primary hover:shadow-md focus:outline-none"
+          className="absolute -end-3 top-[22px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white text-primary shadow-sm transition-all hover:border-sidebar-accent/50 hover:text-sidebar-accent hover:shadow-md focus:outline-none"
         >
           {collapsed
             ? isRtl ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
@@ -153,7 +153,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
           collapsed ? 'h-16 justify-center px-1' : 'h-16 gap-3 px-4'
         )}>
           <div className={cn(
-            'flex shrink-0 items-center justify-center rounded-lg transition-all duration-300',
+            'flex shrink-0 items-center justify-center rounded-lg bg-white p-1 transition-all duration-300',
             collapsed ? 'h-9 w-9' : 'h-9 w-9'
           )}>
             <img
@@ -164,8 +164,8 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-on-surface tracking-tight">{branding.shortName}</p>
-              <p className="truncate text-[11px] font-medium text-on-surface-variant/70">{branding.tagline}</p>
+              <p className="truncate text-sm font-bold text-white tracking-tight">{branding.shortName}</p>
+              <p className="truncate text-[11px] font-medium text-white/50">{branding.tagline}</p>
             </div>
           )}
         </div>
@@ -200,14 +200,14 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
           <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-2.5 px-1')}>
             <div
               title={collapsed ? (user?.displayName ?? '') : undefined}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary transition-transform hover:scale-105"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-[11px] font-bold text-white transition-transform hover:scale-105"
             >
               {getInitials(user?.displayName ?? 'SA')}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-on-surface">{user?.displayName}</p>
-                <p className="truncate text-xs text-on-surface-variant/70">{user?.roleName}</p>
+                <p className="truncate text-sm font-medium text-white/90">{user?.displayName}</p>
+                <p className="truncate text-xs text-white/50">{user?.roleName}</p>
               </div>
             )}
           </div>
