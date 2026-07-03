@@ -5,13 +5,13 @@ import { ShoppingCart, Package, Truck, ChefHat, Store, TrendingUp, TrendingDown 
 function MiniChart({ color = '#5B34A7', height = 24 }: { color?: string; height?: number }) {
   return (
     <svg viewBox={`0 0 60 ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none">
-      <rect x="2" y={height * 0.5} width="6" height={height * 0.5} rx="2" fill={color} fillOpacity="0.15" />
-      <rect x="11" y={height * 0.25} width="6" height={height * 0.75} rx="2" fill={color} fillOpacity="0.25" />
-      <rect x="20" y={height * 0.38} width="6" height={height * 0.62} rx="2" fill={color} fillOpacity="0.15" />
-      <rect x="29" y={height * 0.12} width="6" height={height * 0.88} rx="2" fill={color} fillOpacity="0.35" />
-      <rect x="38" y={height * 0.29} width="6" height={height * 0.71} rx="2" fill={color} fillOpacity="0.2" />
-      <rect x="47" y={height * 0.08} width="6" height={height * 0.92} rx="2" fill={color} fillOpacity="0.4" />
-      <rect x="56" y={height * 0.17} width="6" height={height * 0.83} rx="2" fill={color} fillOpacity="0.3" />
+      <rect x="2" y={height * 0.5} width="6" height={height * 0.5} rx="2" fill={color} fillOpacity="0.25" />
+      <rect x="11" y={height * 0.25} width="6" height={height * 0.75} rx="2" fill={color} fillOpacity="0.35" />
+      <rect x="20" y={height * 0.38} width="6" height={height * 0.62} rx="2" fill={color} fillOpacity="0.25" />
+      <rect x="29" y={height * 0.12} width="6" height={height * 0.88} rx="2" fill={color} fillOpacity="0.45" />
+      <rect x="38" y={height * 0.29} width="6" height={height * 0.71} rx="2" fill={color} fillOpacity="0.3" />
+      <rect x="47" y={height * 0.08} width="6" height={height * 0.92} rx="2" fill={color} fillOpacity="0.5" />
+      <rect x="56" y={height * 0.17} width="6" height={height * 0.83} rx="2" fill={color} fillOpacity="0.4" />
     </svg>
   );
 }
@@ -47,29 +47,29 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <div className="absolute -bottom-20 -end-20 w-72 h-72 rounded-full bg-purple-200/20 blur-[80px] pointer-events-none" />
 
           {/* Main illustration card */}
-          <div className="relative bg-white/80 backdrop-blur-xl rounded-[32px] p-8 shadow-[0_20px_60px_rgba(44,20,88,0.08)] border border-purple-100/40 w-full">
+          <div className="relative bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-[0_20px_60px_rgba(44,20,88,0.08)] border border-purple-100/50 w-full">
             {/* Today's Overview */}
             <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="h-4 w-4 text-purple-400" />
-              <span className="text-xs font-semibold text-purple-400 tracking-wide uppercase">
+              <TrendingUp className="h-4 w-4 text-purple-500" />
+              <span className="text-xs font-semibold text-purple-500 tracking-wide uppercase">
                 {isRtl ? 'نظرة سريعة' : "Today's Overview"}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {/* Header */}
-              <div className="col-span-2 flex items-center gap-3 bg-gradient-to-br from-purple-100/80 to-purple-200/50 rounded-2xl p-4 border border-purple-200/30">
+              <div className="col-span-2 flex items-center gap-3 bg-gradient-to-br from-purple-100 to-purple-200/60 rounded-2xl p-4 border border-purple-200/40 shadow-sm">
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-200/60">
                   <Store className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#5B34A7]">Super Admin</p>
-                  <p className="text-xs text-purple-500/70">{isRtl ? 'لوحة التحكم' : 'Dashboard'}</p>
+                  <p className="text-xs text-purple-500/80">{isRtl ? 'لوحة التحكم' : 'Dashboard'}</p>
                 </div>
               </div>
 
               {/* Orders — most important metric, spans full width */}
-              <div className="col-span-2 bg-gradient-to-br from-orange-50/80 to-orange-100/40 rounded-2xl p-5 flex flex-col gap-2 border border-orange-200/30">
+              <div className="col-span-2 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-5 flex flex-col gap-2 border border-orange-200/40 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200/50">
@@ -90,7 +90,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Products */}
-              <div className="bg-gradient-to-br from-green-50/80 to-green-100/40 rounded-2xl p-4 flex flex-col gap-2 border border-green-200/20">
+              <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-4 flex flex-col gap-2 border border-green-200/30 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md shadow-green-200/50">
                     <Package className="h-[18px] w-[18px] text-white" />
@@ -105,7 +105,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Delivery */}
-              <div className="bg-gradient-to-br from-purple-50/80 to-purple-100/40 rounded-2xl p-4 flex flex-col gap-2 border border-purple-200/20">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 flex flex-col gap-2 border border-purple-200/30 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/50">
                     <Truck className="h-[18px] w-[18px] text-white" />
@@ -120,7 +120,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Chefs — spans full width on second row */}
-              <div className="col-span-2 bg-gradient-to-br from-amber-50/80 to-amber-100/40 rounded-2xl p-4 flex items-center justify-between border border-amber-200/20">
+              <div className="col-span-2 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-2xl p-4 flex items-center justify-between border border-amber-200/30 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200/50">
                     <ChefHat className="h-[18px] w-[18px] text-white" />
@@ -141,8 +141,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           {/* Quote */}
           <div className="text-center">
             <p className="text-sm text-purple-400/50 font-medium tracking-wide uppercase">Healthy & Tasty</p>
-            <p className="text-lg text-purple-700/70 font-semibold mt-1">
-              {isRtl ? 'تحكم في منصتك بكل سهولة' : 'Manage your platform with ease'}
+            <p className="text-lg text-purple-700/80 font-semibold mt-1">
+              {isRtl ? 'لوحة تحكم احترافية لإدارة Healthy & Tasty' : 'Manage your platform with ease'}
             </p>
           </div>
         </div>

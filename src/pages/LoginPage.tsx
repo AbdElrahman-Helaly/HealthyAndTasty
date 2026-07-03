@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, ArrowLeft } from 'lucide-react';
+import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +26,7 @@ export function LoginPage() {
   const location = useLocation();
   const { login, isLoading } = useAuth();
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const isRtl = i18n.language === 'ar';
   usePageTitle(t('auth.loginTitle'));
 
@@ -53,7 +54,7 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="bg-white rounded-[24px] p-8 sm:p-10 shadow-[0_20px_60px_rgba(44,20,88,0.12)] border border-purple-100/50">
+        <div className="bg-white rounded-[24px] p-8 sm:p-10 shadow-[0_20px_60px_rgba(30,20,80,0.08)] border border-purple-100/50">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -61,12 +62,12 @@ export function LoginPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="mb-8 flex justify-center"
           >
-            <div className="relative flex h-24 w-auto min-w-[140px] px-8 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 shadow-xl shadow-slate-950/30 ring-1 ring-white/15 transition-all duration-300 hover:scale-105 hover:shadow-purple-900/20 hover:ring-purple-400/30">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
+            <div className="relative flex h-20 w-auto min-w-[130px] px-6 items-center justify-center rounded-[20px] bg-gradient-to-br from-slate-900 to-slate-950 shadow-[0_12px_30px_rgba(40,20,80,0.12)] ring-1 ring-white/15 transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_30px_rgba(40,20,80,0.2)] hover:ring-purple-400/30">
+              <div className="absolute inset-0 rounded-[20px] bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
               <img
                 src="/logo.png"
                 alt={branding.name}
-                className="h-16 w-auto max-w-[220px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                className="h-14 w-auto max-w-[200px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />
             </div>
           </motion.div>
@@ -76,7 +77,7 @@ export function LoginPage() {
             <h2 className="mb-4 text-[32px] font-bold text-gray-900 tracking-tight">
               {t('auth.loginTitle')}
             </h2>
-            <p className="text-base text-gray-500 font-medium leading-relaxed">
+            <p className="text-base text-[#7A7A7A] font-medium leading-relaxed">
               {t('auth.loginSubtitle')}
             </p>
           </div>
@@ -94,9 +95,11 @@ export function LoginPage() {
             />
             <Input
               label={t('auth.password')}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               icon={<Lock className="h-5 w-5" />}
+              rightIcon={showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              onRightIconClick={() => setShowPassword(!showPassword)}
               error={errors.password?.message}
               {...register('password')}
             />
@@ -116,7 +119,7 @@ export function LoginPage() {
               type="submit"
               size="lg"
               loading={isLoading}
-              className="group relative w-full h-14 font-semibold text-base rounded-[14px] overflow-hidden transition-all duration-300 shadow-lg shadow-purple-300/40 hover:shadow-xl hover:shadow-purple-400/50 hover:-translate-y-0.5 active:translate-y-0"
+              className="group relative w-full h-[58px] font-semibold text-base rounded-[14px] overflow-hidden transition-all duration-300 shadow-lg shadow-purple-300/40 hover:shadow-xl hover:shadow-purple-400/50 hover:-translate-y-0.5 active:translate-y-0"
               style={{
                 background: 'linear-gradient(135deg, #4E2F88 0%, #6D3EEA 100%)',
               }}
@@ -126,7 +129,7 @@ export function LoginPage() {
                 <ArrowLeft className={`h-5 w-5 transition-transform duration-300 group-hover:translate-x-1 ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
               </span>
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: 'linear-gradient(135deg, #5B34A7 0%, #7D5CEA 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #6D3EEA 0%, #8B5CF6 100%)' }}
               />
             </Button>
 
