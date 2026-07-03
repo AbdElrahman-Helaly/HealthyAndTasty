@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useEmployeeDetails, useEmployees, useRoles } from '@/hooks/useEmployeeDetails';
+import { useBranches } from '@/hooks/useBranchDetails';
 import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { formatDate } from '@/lib/utils';
@@ -48,6 +49,7 @@ function EditEmployeeDrawer({ employeeId, open, onClose, onSaved }: EditDrawerPr
   const { t } = useTranslation();
   const { data: employee, isLoading, error, refetch } = useEmployeeDetails(employeeId ?? undefined);
   const { data: roles, isLoading: rolesLoading } = useRoles();
+  const { data: branches, isLoading: branchesLoading } = useBranches();
 
   const [form, setForm] = useState<Partial<EmployeeUpdateRequest>>({});
   const [saving, setSaving] = useState(false);
@@ -171,7 +173,22 @@ function EditEmployeeDrawer({ employeeId, open, onClose, onSaved }: EditDrawerPr
             <Input label="Email" type="email" value={getValue('email')} onChange={set('email')} />
             <Input label="Phone (E.164)" value={getValue('phoneE164')} onChange={set('phoneE164')} placeholder="+10001234567" />
             <Input label="Employee Code" value={getValue('employeeCode')} onChange={set('employeeCode')} />
-            <Input label="Branch ID" value={getValue('employeeBranchId')} onChange={set('employeeBranchId')} />
+            <div>
+              <label className="text-sm font-semibold text-gray-800">{t('nav.branches')}</label>
+              <select
+                value={getValue('employeeBranchId')}
+                onChange={(e) => setForm((f) => ({ ...f, employeeBranchId: e.target.value }))}
+                disabled={branchesLoading}
+                className="mt-1.5 h-[48px] w-full rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-4 text-sm text-gray-900 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
+              >
+                <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
+                {(branches ?? []).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.countryCode})
+                  </option>
+                ))}
+              </select>
+            </div>
             <Input label="New Password" type="password" value={getValue('password')} onChange={set('password')} placeholder="Leave blank to keep current" />
 
             {/* Role change section */}
