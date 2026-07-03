@@ -61,11 +61,12 @@ export function LoginPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="mb-8 flex justify-center"
           >
-            <div className="flex h-24 w-auto min-w-[140px] px-8 items-center justify-center rounded-2xl bg-slate-950 shadow-lg ring-1 ring-white/10 transition-transform hover:scale-105 duration-300">
+            <div className="relative flex h-24 w-auto min-w-[140px] px-8 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 shadow-xl shadow-slate-950/30 ring-1 ring-white/15 transition-all duration-300 hover:scale-105 hover:shadow-purple-900/20 hover:ring-purple-400/30">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
               <img
                 src="/logo.png"
                 alt={branding.name}
-                className="h-16 w-auto max-w-[220px] object-contain"
+                className="h-16 w-auto max-w-[220px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />
             </div>
           </motion.div>
