@@ -10,7 +10,7 @@
  */
 import { env } from '@/config/env';
 import { ApiError, api } from '@/lib/api';
-import type { Banner } from '@/types';
+import type { ActionTypeOption, Banner } from '@/types';
 import type { ApiErrorPayload } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -89,9 +89,15 @@ export async function getBannerById(id: string): Promise<Banner> {
   return api.banners.getById(id);
 }
 
+export async function getActionTypes(): Promise<ActionTypeOption[]> {
+  return api.banners.getActionTypes();
+}
+
 export interface CreateBannerData {
   file: File;
   categoryId: string;
+  productId: string;
+  actionType: number;
   isActive: boolean;
   sortOrder: number;
 }
@@ -103,6 +109,8 @@ export async function createBanner(data: CreateBannerData): Promise<{ id: string
   const formData = new FormData();
   formData.append('file', data.file);
   formData.append('categoryId', data.categoryId);
+  formData.append('productId', data.productId);
+  formData.append('actionType', String(data.actionType));
   formData.append('isActive', String(data.isActive));
   formData.append('sortOrder', String(data.sortOrder));
   return multipartRequest<{ id: string }>('POST', '/api/admin/banners', formData);
@@ -111,6 +119,8 @@ export async function createBanner(data: CreateBannerData): Promise<{ id: string
 export interface UpdateBannerData {
   file?: File;
   categoryId: string;
+  productId: string;
+  actionType: number;
   isActive: boolean;
   sortOrder: number;
 }
@@ -123,6 +133,8 @@ export async function updateBanner(id: string, data: UpdateBannerData): Promise<
   const formData = new FormData();
   if (data.file) formData.append('file', data.file);
   formData.append('categoryId', data.categoryId);
+  formData.append('productId', data.productId);
+  formData.append('actionType', String(data.actionType));
   formData.append('isActive', String(data.isActive));
   formData.append('sortOrder', String(data.sortOrder));
   await multipartRequest<void>('PUT', `/api/admin/banners/${encodeURIComponent(id)}`, formData);

@@ -206,6 +206,7 @@ const GLOBAL_PATHS = [
   '/api/branches',
   '/api/notifications',
   '/api/admin/banners',
+  '/api/banners/action-types',
   '/api/admin/discounts',
 ];
 
@@ -1146,6 +1147,12 @@ export const api = {
         'PATCH',
         `/api/admin/banners/${encodeURIComponent(id)}/toggle`,
       );
+    },
+
+    async getActionTypes(): Promise<import('@/types').ActionTypeOption[]> {
+      const raw = await request<unknown>('GET', '/api/banners/action-types');
+      if (Array.isArray(raw)) return raw as import('@/types').ActionTypeOption[];
+      return [];
     },
   },
 };

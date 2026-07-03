@@ -387,10 +387,17 @@ export interface Banner {
   id: string;
   imageUrl: string;
   categoryId: string;
+  productId: string;
+  actionType: number;
   isActive: boolean;
   sortOrder: number;
   createdAtUtc: string;
   updatedAtUtc: string | null;
+}
+
+export interface ActionTypeOption {
+  value: number;
+  name: string;
 }
 
 // ---------------------------------------------------------------------------

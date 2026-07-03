@@ -20,10 +20,12 @@ import {
   updateBanner,
   deleteBanner,
   toggleBanner,
+  getActionTypes,
   getFullImageUrl,
 } from '@/services/bannersApi';
 import { getCategories } from '@/services/categoriesApi';
-import type { Banner } from '@/types';
+import { getProducts } from '@/services/productsApi';
+import type { ActionTypeOption, Banner } from '@/types';
 import type { CreateBannerData, UpdateBannerData } from '@/services/bannersApi';
 
 // ---------------------------------------------------------------------------
@@ -52,13 +54,14 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
 interface BannerCardProps {
   banner: Banner;
   categoryName: string;
+  actionTypeName: string;
   onEdit: (b: Banner) => void;
   onDelete: (b: Banner) => void;
   onToggle: (b: Banner) => void;
   toggling: boolean;
 }
 
-function BannerCard({ banner, categoryName, onEdit, onDelete, onToggle, toggling }: BannerCardProps) {
+function BannerCard({ banner, categoryName, actionTypeName, onEdit, onDelete, onToggle, toggling }: BannerCardProps) {
   const [imgError, setImgError] = useState(false);
   const fullUrl = getFullImageUrl(banner.imageUrl);
 
@@ -90,7 +93,12 @@ function BannerCard({ banner, categoryName, onEdit, onDelete, onToggle, toggling
       {/* Card body */}
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-on-surface">{categoryName || '—'}</p>
+          <div className="flex flex-col gap-1 min-w-0">
+            <p className="truncate text-sm font-semibold text-on-surface">{categoryName || '—'}</p>
+            {actionTypeName && (
+              <Badge variant="neutral" className="w-fit text-xs">{actionTypeName}</Badge>
+            )}
+          </div>
           <ToggleSwitch checked={banner.isActive} onChange={() => onToggle(banner)} disabled={toggling} />
         </div>
         <div className="flex gap-2 mt-auto">
@@ -115,13 +123,17 @@ interface BannerFormDrawerProps {
   onSaved: () => void;
   editTarget: Banner | null;
   categories: Array<{ id: string; name: string }>;
+  actionTypes: ActionTypeOption[];
+  products: Array<{ id: string; name: string }>;
   showToast: (msg: string, type?: 'success' | 'error') => void;
 }
 
-function BannerFormDrawer({ open, onClose, onSaved, editTarget, categories, showToast }: BannerFormDrawerProps) {
+function BannerFormDrawer({ open, onClose, onSaved, editTarget, categories, actionTypes, products, showToast }: BannerFormDrawerProps) {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [categoryId, setCategoryId] = useState('');
+  const [productId, setProductId] = useState('');
+  const [actionType, setActionType] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [sortOrder, setSortOrder] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -130,11 +142,15 @@ function BannerFormDrawer({ open, onClose, onSaved, editTarget, categories, show
   const handleOpen = useCallback(() => {
     if (editTarget) {
       setCategoryId(editTarget.categoryId);
+      setProductId(editTarget.productId);
+      setActionType(editTarget.actionType);
       setIsActive(editTarget.isActive);
       setSortOrder(editTarget.sortOrder);
       setPreviewUrl(getFullImageUrl(editTarget.imageUrl));
     } else {
       setCategoryId('');
+      setProductId('');
+      setActionType(0);
       setIsActive(true);
       setSortOrder(0);
       setPreviewUrl('');
@@ -154,18 +170,19 @@ function BannerFormDrawer({ open, onClose, onSaved, editTarget, categories, show
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoryId) return;
     if (!editTarget && !file) return;
+    if (actionType === 2 && !categoryId) return;
+    if (actionType === 3 && !productId) return;
 
     setSaving(true);
     try {
       if (editTarget) {
-        const data: UpdateBannerData = { categoryId, isActive, sortOrder };
+        const data: UpdateBannerData = { categoryId, productId, actionType, isActive, sortOrder };
         if (file) data.file = file;
         await updateBanner(editTarget.id, data);
         showToast('Banner updated successfully', 'success');
       } else {
-        const data: CreateBannerData = { file: file!, categoryId, isActive, sortOrder };
+        const data: CreateBannerData = { file: file!, categoryId, productId, actionType, isActive, sortOrder };
         await createBanner(data);
         showToast('Banner created successfully', 'success');
       }
@@ -218,21 +235,57 @@ function BannerFormDrawer({ open, onClose, onSaved, editTarget, categories, show
           />
         </div>
 
-        {/* Category */}
+        {/* Action Type */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-on-surface">Category <span className="text-error">*</span></label>
+          <label className="text-sm font-medium text-on-surface">Action Type</label>
           <select
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-            required
+            value={actionType}
+            onChange={e => { setActionType(Number(e.target.value)); setCategoryId(''); setProductId(''); }}
             className="h-10 w-full rounded-xl border border-outline-variant/40 bg-surface px-3 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="">Select category...</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            {actionTypes.map(at => (
+              <option key={at.value} value={at.value}>{at.name}</option>
             ))}
           </select>
         </div>
+
+        {/* Category (shown for all except Product type) */}
+        {(actionType !== 3) && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-on-surface">
+              Category {actionType === 2 ? <span className="text-error">*</span> : null}
+            </label>
+            <select
+              value={categoryId}
+              onChange={e => setCategoryId(e.target.value)}
+              required={actionType === 2}
+              className="h-10 w-full rounded-xl border border-outline-variant/40 bg-surface px-3 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">{actionType === 2 ? 'Select category...' : 'None'}</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Product (shown only for Product action type) */}
+        {actionType === 3 && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-on-surface">Product <span className="text-error">*</span></label>
+            <select
+              value={productId}
+              onChange={e => setProductId(e.target.value)}
+              required
+              className="h-10 w-full rounded-xl border border-outline-variant/40 bg-surface px-3 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">Select product...</option>
+              {products.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Sort order */}
         <Input
@@ -263,13 +316,23 @@ export function BannersPage() {
 
   const { data: banners, isLoading, refetch } = useAsync(getBanners, []);
   const { data: categoriesData } = useAsync(getCategories, []);
+  const { data: actionTypesData } = useAsync(getActionTypes, []);
+  const { data: productsData } = useAsync(() => getProducts({ pageSize: 200, isActive: true }), []);
   const categories = categoriesData ?? [];
+  const actionTypes = actionTypesData ?? [];
+  const products = productsData?.items ?? [];
 
   const categoryMap = useMemo(() => {
     const map: Record<string, string> = {};
     categories.forEach(c => { map[c.id] = c.name; });
     return map;
   }, [categories]);
+
+  const actionTypeMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    actionTypes.forEach(at => { map[at.value] = at.name; });
+    return map;
+  }, [actionTypes]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Banner | null>(null);
@@ -370,6 +433,7 @@ export function BannersPage() {
               key={banner.id}
               banner={banner}
               categoryName={categoryMap[banner.categoryId] ?? ''}
+              actionTypeName={actionTypeMap[banner.actionType] ?? ''}
               onEdit={openEdit}
               onDelete={setDeleteTarget}
               onToggle={handleToggle}
@@ -386,6 +450,8 @@ export function BannersPage() {
         onSaved={refetch}
         editTarget={editTarget}
         categories={categories}
+        actionTypes={actionTypes}
+        products={products}
         showToast={show}
       />
 
