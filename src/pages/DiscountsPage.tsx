@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Tag, Search, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
+import { SearchFilters, SelectFilter } from '@/components/shared/SearchFilters';
 import { FormDrawer } from '@/components/shared/FormDrawer';
 import { Card, StatCard } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -62,7 +63,7 @@ function MultiSelect({
   return (
     <div className="relative" ref={containerRef}>
       <div
-        className="flex min-h-[44px] cursor-pointer items-center justify-between rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
+        className="flex min-h-[48px] cursor-pointer items-center justify-between rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-3 py-2 text-sm text-on-surface focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(124,58,237,0.12)]"
         onClick={() => setOpen(!open)}
       >
         <span className="truncate">
@@ -83,7 +84,21 @@ function MultiSelect({
           ) : (
             options.map((opt) => {
               const isSelected = value.includes(opt.id);
-              return (
+  const typeLabels: Record<string, string> = {
+    Percentage: 'نسبة مئوية',
+    FixedAmount: 'قيمة ثابتة',
+    BuyXGetY: 'اشتر X واحصل على Y',
+    Bundle: 'حزمة منتجات',
+    FreeShipping: 'شحن مجاني',
+    Tiered: 'متدرج',
+  };
+
+  const targetLabels: Record<string, string> = {
+    AllProducts: 'جميع المنتجات',
+    SpecificProducts: 'منتجات محددة',
+    SpecificCategories: 'فئات محددة',
+    OrderLevel: 'مستوى الطلب',
+  };
                 <label
                   key={opt.id}
                   className="flex cursor-pointer items-center px-3 py-2 hover:bg-surface-container/50"
@@ -282,6 +297,22 @@ function DiscountFormDrawer({
     }
   }
 
+  const typeLabels: Record<string, string> = {
+    Percentage: 'نسبة مئوية',
+    FixedAmount: 'قيمة ثابتة',
+    BuyXGetY: 'اشتر X واحصل على Y',
+    Bundle: 'حزمة منتجات',
+    FreeShipping: 'شحن مجاني',
+    Tiered: 'متدرج',
+  };
+
+  const targetLabels: Record<string, string> = {
+    AllProducts: 'جميع المنتجات',
+    SpecificProducts: 'منتجات محددة',
+    SpecificCategories: 'فئات محددة',
+    OrderLevel: 'مستوى الطلب',
+  };
+
   return (
     <FormDrawer
       open={open}
@@ -302,7 +333,7 @@ function DiscountFormDrawer({
       }
     >
       <form id="discount-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col gap-6">
-        
+
         {/* Confirm Close Dialog */}
         <ConfirmDialog
           open={showConfirmClose}
@@ -315,10 +346,46 @@ function DiscountFormDrawer({
           message="لديك تغييرات غير محفوظة، هل تريد إغلاق النموذج؟"
         />
 
+        {/* Type & Value */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-lg font-semibold text-on-surface">{t('discounts.fields.type')}</h3>
+          <select
+            value={typeValue}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setTypeValue(val);
+              markDirty();
+              if (val === 4) { setTargetValue(2); } // Bundle → SpecificProducts
+              if (val === 5) { setTargetValue(4); } // FreeShipping → OrderLevel
+            }}
+            className={`h-[48px] rounded-2xl border px-3 text-sm focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] ${fieldErrors.typeValue ? 'border-error' : 'border-[#DDD6FE] bg-[#F9FAFF]'}`}
+          >
+            {types.map(t => <option key={t.value} value={t.value}>{typeLabels[t.name] || t.name}</option>)}
+          </select>
+
+          <Input
+            label={
+              selectedTypeObj?.name === 'Percentage' ? 'نسبة الخصم (%)' :
+              selectedTypeObj?.name === 'FixedAmount' ? 'قيمة الخصم (رس)' :
+              selectedTypeObj?.name === 'FreeShipping' ? 'قيمة الطلب المؤهلة (رس)' :
+              t('discounts.fields.value')
+            }
+            type="number"
+            min={0}
+            max={selectedTypeObj?.name === 'Percentage' ? 100 : undefined}
+            value={String(value)}
+            onChange={(e) => { setValue(Number(e.target.value)); markDirty(); }}
+            error={fieldErrors.value}
+            required
+          />
+        </div>
+
+        <hr className="border-outline-variant/30" />
+
         {/* Basic Info */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold text-on-surface">{t('discounts.sections.basicInfo')}</h3>
-          
+
           <Input
             label={t('discounts.fields.name')}
             value={name}
@@ -326,51 +393,22 @@ function DiscountFormDrawer({
             error={fieldErrors.name}
             required
           />
-          
+
           <Input
             label={t('discounts.fields.couponCode')}
             value={couponCode}
             onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); markDirty(); }}
             placeholder="مثال: SUMMER20"
           />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-on-surface">
-                {t('discounts.fields.type')} <span className="text-error">*</span>
-              </label>
-              <select
-                value={typeValue}
-                onChange={(e) => { setTypeValue(Number(e.target.value)); markDirty(); }}
-                className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:ring-2 ${fieldErrors.typeValue ? 'border-error' : 'border-outline-variant'}`}
-              >
-                {types.map(t => <option key={t.value} value={t.value}>{t.name}</option>)}
-              </select>
-            </div>
-
-            <Input
-              label={selectedTypeObj?.name === 'Percentage' ? 'النسبة %' : t('discounts.fields.value')}
-              type="number"
-              min={0}
-              max={selectedTypeObj?.name === 'Percentage' ? 100 : undefined}
-              value={String(value)}
-              onChange={(e) => { setValue(Number(e.target.value)); markDirty(); }}
-              error={fieldErrors.value}
-              required
-            />
-          </div>
         </div>
 
         <hr className="border-outline-variant/30" />
 
         {/* Target */}
-        <div className="flex flex-col gap-4">
-          <h3 className="text-lg font-semibold text-on-surface">{t('discounts.sections.target')}</h3>
-          
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-on-surface">
-              {t('discounts.fields.target')} <span className="text-error">*</span>
-            </label>
+        {selectedTypeObj?.name !== 'FreeShipping' && (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-lg font-semibold text-on-surface">{t('discounts.sections.target')}</h3>
+
             <select
               value={targetValue}
               onChange={(e) => {
@@ -381,41 +419,52 @@ function DiscountFormDrawer({
                 if (selected?.name !== 'SpecificProducts') setProductIds([]);
                 if (selected?.name !== 'SpecificCategories') setCategoryIds([]);
               }}
-              className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:ring-2 ${fieldErrors.targetValue ? 'border-error' : 'border-outline-variant'}`}
+              className={`h-[48px] rounded-2xl border px-3 text-sm focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] ${fieldErrors.targetValue ? 'border-error' : 'border-[#DDD6FE] bg-[#F9FAFF]'}`}
             >
-              {targets.map(t => <option key={t.value} value={t.value}>{t.name}</option>)}
+              {targets.map(t => <option key={t.value} value={t.value}>{targetLabels[t.name] || t.name}</option>)}
             </select>
+
+            {selectedTargetObj?.name === 'SpecificProducts' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-on-surface">{t('discounts.fields.productIds')}</label>
+                <MultiSelect
+                  options={products}
+                  value={productIds}
+                  onChange={(val) => { setProductIds(val); markDirty(); }}
+                />
+              </div>
+            )}
+
+            {selectedTargetObj?.name === 'SpecificCategories' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-on-surface">{t('discounts.fields.categoryIds')}</label>
+                <MultiSelect
+                  options={categories}
+                  value={categoryIds}
+                  onChange={(val) => { setCategoryIds(val); markDirty(); }}
+                />
+              </div>
+            )}
           </div>
+        )}
 
-          {selectedTargetObj?.name === 'SpecificProducts' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-on-surface">{t('discounts.fields.productIds')}</label>
-              <MultiSelect
-                options={products}
-                value={productIds}
-                onChange={(val) => { setProductIds(val); markDirty(); }}
-              />
-            </div>
-          )}
-
-          {selectedTargetObj?.name === 'SpecificCategories' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-on-surface">{t('discounts.fields.categoryIds')}</label>
-              <MultiSelect
-                options={categories}
-                value={categoryIds}
-                onChange={(val) => { setCategoryIds(val); markDirty(); }}
-              />
-            </div>
-          )}
-        </div>
+        {selectedTypeObj?.name === 'Bundle' && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-on-surface">{t('discounts.fields.productIds')}</label>
+            <MultiSelect
+              options={products}
+              value={productIds}
+              onChange={(val) => { setProductIds(val); markDirty(); }}
+            />
+          </div>
+        )}
 
         <hr className="border-outline-variant/30" />
 
         {/* Dates */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold text-on-surface">{t('discounts.sections.validityPeriod')}</h3>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <Input
               label={t('discounts.fields.startDate')}
@@ -441,30 +490,30 @@ function DiscountFormDrawer({
         {/* Limits */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold text-on-surface">{t('discounts.sections.limitsAndRestrictions')}</h3>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <Input
                 label={t('discounts.fields.usageLimit')}
                 type="number"
-              min={0}
+                min={0}
                 value={String(usageLimit)}
                 onChange={(e) => { setUsageLimit(Number(e.target.value)); markDirty(); }}
               />
               <span className="text-xs text-on-surface-variant px-1">{t('discounts.unlimitedHint')}</span>
             </div>
-            
+
             <div className="flex flex-col gap-1">
               <Input
                 label={t('discounts.fields.perUserLimit')}
                 type="number"
-              min={0}
+                min={0}
                 value={String(perUserLimit)}
                 onChange={(e) => { setPerUserLimit(Number(e.target.value)); markDirty(); }}
               />
               <span className="text-xs text-on-surface-variant px-1">{t('discounts.unlimitedHint')}</span>
             </div>
-            
+
             <Input
               label={t('discounts.fields.minOrderAmount')}
               type="number"
@@ -472,7 +521,7 @@ function DiscountFormDrawer({
               value={String(minOrderAmount)}
               onChange={(e) => { setMinOrderAmount(Number(e.target.value)); markDirty(); }}
             />
-            
+
             <Input
               label={t('discounts.fields.maxDiscountAmount')}
               type="number"
@@ -481,7 +530,7 @@ function DiscountFormDrawer({
               onChange={(e) => { setMaxDiscountAmount(Number(e.target.value)); markDirty(); }}
             />
           </div>
-          
+
           {isEdit && (
             <div className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container/30 px-4 py-3 mt-2">
               <span className="text-sm font-medium text-on-surface">
@@ -509,7 +558,7 @@ function DiscountFormDrawer({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          
+
           {advancedOpen && (
             <div className="flex flex-col gap-1.5 mt-2">
               <label className="text-sm font-medium text-on-surface">
@@ -769,68 +818,47 @@ export function DiscountsPage() {
             label="إجمالي الخصومات"
             value={discounts?.length || 0}
             icon={<Tag className="h-5 w-5" />}
+            iconColor="#7C3AED"
           />
           <StatCard
             label="نشط"
             value={discounts?.filter(d => d.isActive && new Date(d.endDate) >= new Date()).length || 0}
             icon={<CheckCircle2 className="h-5 w-5" />}
-            iconBg="bg-success/10 text-success"
+            iconColor="#16A34A"
           />
           <StatCard
             label="غير نشط"
             value={discounts?.filter(d => !d.isActive && new Date(d.endDate) >= new Date()).length || 0}
             icon={<XCircle className="h-5 w-5" />}
-            iconBg="bg-on-surface-variant/10 text-on-surface-variant"
+            iconColor="#64748B"
           />
           <StatCard
             label="منتهي الصلاحية"
             value={discounts?.filter(d => new Date(d.endDate) < new Date()).length || 0}
             icon={<Clock className="h-5 w-5" />}
-            iconBg="bg-warning/10 text-warning-dark"
+            iconColor="#D97706"
           />
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant/60" />
-          <Input
-            placeholder="بحث بالاسم أو الكود..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="ps-9"
-          />
-        </div>
-        <div className="flex bg-surface-container rounded-lg p-1 overflow-x-auto scrollbar-hide">
-          {(['all', 'active', 'inactive', 'expired'] as const).map((f) => {
-            let count = discounts?.length || 0;
-            if (discounts) {
-              const now = new Date();
-              if (f === 'active') count = discounts.filter(d => d.isActive && new Date(d.endDate) >= now).length;
-              if (f === 'inactive') count = discounts.filter(d => !d.isActive && new Date(d.endDate) >= now).length;
-              if (f === 'expired') count = discounts.filter(d => new Date(d.endDate) < now).length;
-            }
-
-            return (
-              <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className={`flex shrink-0 items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                  statusFilter === f
-                    ? 'bg-surface text-on-surface shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
-                }`}
-              >
-                {f === 'all' ? 'الكل' : t(`discounts.status.${f}`)}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === f ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Search & Status Filter */}
+      <SearchFilters
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="بحث بالاسم أو الكود..."
+      >
+        <SelectFilter
+          label={t('common.status')}
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as any)}
+          options={[
+            { value: 'all', label: 'الكل' },
+            { value: 'active', label: t('discounts.status.active') },
+            { value: 'inactive', label: t('discounts.status.inactive') },
+            { value: 'expired', label: t('discounts.status.expired') },
+          ]}
+        />
+      </SearchFilters>
       <Card padding="none" className="overflow-hidden">
         {isLoading ? (
           <div className="p-6">
