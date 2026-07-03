@@ -16,7 +16,9 @@ export function SuperAdminLayout() {
   );
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-screen overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #f8f4ff 0%, #f0ebff 40%, #f4efff 70%, #f8f4ff 100%)' }}
+    >
       <Sidebar collapsed={collapsed} onToggle={toggle} />
 
       <AnimatePresence>
