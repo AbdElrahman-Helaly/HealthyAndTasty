@@ -1,7 +1,6 @@
 import { env } from '@/config/env';
 import { getSelectedCountryPrefix } from '@/context/CountryContext';
 import type {
-  Address,
   ApiErrorPayload,
   ApiRole,
   Branch,
@@ -9,7 +8,6 @@ import type {
   Category,
   ChangeEmployeeRoleRequest,
   Country,
-  CreateAddressRequest,
   CreateBranchEmployeeRequest,
   CreateBranchRequest,
   CreateCategoryInput,
@@ -29,7 +27,6 @@ import type {
   UpdateProductBody,
   RefreshTokenResponse,
   SendNotificationInput,
-  UpdateAddressRequest,
   UpdateBranchRequest,
   UpdateCategoryInput,
 } from '@/types';
@@ -361,29 +358,6 @@ function sanitizeBranch(raw: unknown): Branch | null {
   };
 }
 
-function normalizeCountry(raw: unknown): { id: string; code: string; name: string } {
-  if (typeof raw === 'number') {
-    const countryMap: Record<number, { id: string; code: string; name: string }> = {
-      1: { id: 'eg', code: 'EG', name: 'Egypt' },
-      2: { id: 'sa', code: 'SA', name: 'Saudi Arabia' },
-      3: { id: 'ae', code: 'AE', name: 'UAE' },
-    };
-    return countryMap[raw] ?? { id: 'eg', code: 'EG', name: 'Egypt' };
-  }
-
-  if (typeof raw === 'string') {
-    const code = raw.toUpperCase();
-    const countryMap: Record<string, { id: string; code: string; name: string }> = {
-      EG: { id: 'eg', code: 'EG', name: 'Egypt' },
-      SA: { id: 'sa', code: 'SA', name: 'Saudi Arabia' },
-      AE: { id: 'ae', code: 'AE', name: 'UAE' },
-    };
-    return countryMap[code] ?? { id: code.toLowerCase(), code, name: code };
-  }
-
-  return { id: '', code: '', name: '' };
-}
-
 function sanitizeBranchEmployee(raw: unknown): BranchEmployee | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -504,32 +478,6 @@ function getTotalCount(raw: Record<string, unknown>, fallback: number): number {
     : typeof raw.count === 'number'
     ? raw.count
     : fallback;
-}
-
-function sanitizeAddress(raw: unknown): Address | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const r = raw as Record<string, unknown>;
-  const id = typeof r.id === 'string' ? r.id : '';
-  const label = typeof r.label === 'string' ? r.label : '';
-  const line1 = typeof r.line1 === 'string' ? r.line1 : '';
-  const city = typeof r.city === 'string' ? r.city : '';
-  const region = typeof r.region === 'string' ? r.region : '';
-  const country = normalizeCountry(r.country).code;
-  if (!id || !line1 || !city) return null;
-  return {
-    id,
-    label,
-    line1,
-    line2: typeof r.line2 === 'string' ? r.line2 : r.line2 === null ? null : null,
-    city,
-    region,
-    country,
-    postalCode: typeof r.postalCode === 'string' ? r.postalCode : r.postalCode === null ? null : null,
-    phoneE164: typeof r.phoneE164 === 'string' ? r.phoneE164 : r.phoneE164 === null ? null : null,
-    latitude: typeof r.latitude === 'number' ? r.latitude : r.latitude === null ? null : null,
-    longitude: typeof r.longitude === 'number' ? r.longitude : r.longitude === null ? null : null,
-    isDefault: typeof r.isDefault === 'boolean' ? r.isDefault : false,
-  };
 }
 
 function sanitizeProduct(raw: unknown): Product | null {
@@ -979,45 +927,6 @@ export const api = {
 
     async markAsRead(id: string): Promise<void> {
       await request<void>('PATCH', `/notifications/${encodeURIComponent(id)}/read`);
-    },
-  },
-
-  addresses: {
-    async list(): Promise<Address[]> {
-      const raw = await request<unknown>('GET', '/api/me/addresses');
-      if (Array.isArray(raw)) return sanitizeArray(raw, sanitizeAddress);
-      if (raw && typeof raw === 'object') {
-        const r = raw as Record<string, unknown>;
-        return sanitizeArray(r.items ?? r.data ?? r.addresses, sanitizeAddress);
-      }
-      return [];
-    },
-
-    async getById(id: string): Promise<Address | null> {
-      const raw = await request<unknown>('GET', `/api/me/addresses/${encodeURIComponent(id)}`);
-      return sanitizeAddress(raw);
-    },
-
-    async create(payload: CreateAddressRequest): Promise<Address> {
-      const raw = await request<unknown>('POST', '/api/me/addresses', payload);
-      const address = sanitizeAddress(raw);
-      if (!address) throw new ApiError(500, { message: 'Invalid address response from server' });
-      return address;
-    },
-
-    async update(id: string, payload: UpdateAddressRequest): Promise<Address> {
-      const raw = await request<unknown>('PUT', `/api/me/addresses/${encodeURIComponent(id)}`, payload);
-      const address = sanitizeAddress(raw);
-      if (!address) throw new ApiError(500, { message: 'Invalid address response from server' });
-      return address;
-    },
-
-    async delete(id: string): Promise<void> {
-      await request<void>('DELETE', `/api/me/addresses/${encodeURIComponent(id)}`);
-    },
-
-    async setDefault(id: string): Promise<void> {
-      await request<void>('PUT', `/api/me/addresses/${encodeURIComponent(id)}/default`);
     },
   },
 

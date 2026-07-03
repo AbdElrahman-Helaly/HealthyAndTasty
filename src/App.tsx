@@ -45,9 +45,6 @@ const AuditLogsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
-const AddressesPage = lazy(() =>
-  import('@/pages/addresses/AddressesPage').then((m) => ({ default: m.AddressesPage })),
-);
 const BannersPage = lazy(() =>
   import('@/pages/BannersPage').then((m) => ({ default: m.BannersPage })),
 );
@@ -92,7 +89,6 @@ export default function App() {
             <Route path="employees" element={<LazyPage><EmployeesPage /></LazyPage>} />
             <Route path="employees/:id" element={<LazyPage><EmployeeDetailsPage /></LazyPage>} />
             <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />
-            <Route path="addresses" element={<LazyPage><AddressesPage /></LazyPage>} />
             <Route path="banners" element={<LazyPage><BannersPage /></LazyPage>} />
             <Route path="discounts" element={<LazyPage><DiscountsPage /></LazyPage>} />
             <Route path="notifications" element={<LazyPage><NotificationsPage /></LazyPage>} />

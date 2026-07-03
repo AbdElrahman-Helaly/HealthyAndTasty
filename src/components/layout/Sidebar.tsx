@@ -9,7 +9,6 @@ import {
   Building2,
   Users,
   Package,
-  MapPin,
   Image,
   Tag,
   Bell,
@@ -52,7 +51,6 @@ const navGroups: NavGroup[] = [
       { to: '/branches', icon: Building2, labelKey: 'nav.branches' },
       { to: '/employees', icon: Users, labelKey: 'nav.employees' },
       { to: '/products', icon: Package, labelKey: 'nav.products' },
-      { to: '/addresses', icon: MapPin, labelKey: 'nav.addresses' },
     ],
   },
   {
