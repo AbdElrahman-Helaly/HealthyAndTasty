@@ -191,17 +191,6 @@ export interface EmployeeDetails extends Employee {
   branch: Branch | null;
 }
 
-/** Body for POST /api/employees */
-export interface CreateEmployeeRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneE164: string;
-  employeeCode: string;
-  employeeBranchId: string;
-  password: string;
-}
-
 /** Body for PUT /api/employees/{id} */
 export interface EmployeeUpdateRequest {
   firstName: string;

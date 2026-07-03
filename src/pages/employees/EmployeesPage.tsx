@@ -11,7 +11,8 @@ import { LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useEmployeeDetails, useEmployees, useRoles } from '@/hooks/useEmployeeDetails';
 import { useBranches } from '@/hooks/useBranchDetails';
-import { createEmployee, deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
+import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
+import { createBranchEmployee } from '@/services/branch.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { formatDate } from '@/lib/utils';
 import type { Employee, EmployeeUpdateRequest } from '@/types';
@@ -49,13 +50,10 @@ function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
   const { data: branches, isLoading: branchesLoading } = useBranches();
 
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneE164: '',
+    displayName: '',
     employeeCode: '',
-    employeeBranchId: '',
     password: '',
+    branchId: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,27 +64,23 @@ function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
       setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSave = async () => {
-    if (!form.employeeCode || !form.password || !form.firstName) {
-      setError('Employee code, password, and first name are required');
+    if (!form.employeeCode || !form.password || !form.displayName) {
+      setError('بيانات ناقصة: الاسم، كود الموظف، وكلمة المرور مطلوبين');
+      return;
+    }
+    if (!form.branchId) {
+      setError('يرجى اختيار الفرع');
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      await createEmployee(form);
-      setForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneE164: '',
-        employeeCode: '',
-        employeeBranchId: '',
-        password: '',
-      });
+      await createBranchEmployee(form);
+      setForm({ displayName: '', employeeCode: '', password: '', branchId: '' });
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create employee');
+      setError(err instanceof Error ? err.message : 'فشل إنشاء الموظف');
     } finally {
       setSaving(false);
     }
@@ -114,20 +108,15 @@ function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
       }
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="الاسم الأول" value={form.firstName} onChange={set('firstName')} />
-          <Input label="الاسم الأخير" value={form.lastName} onChange={set('lastName')} />
-        </div>
-        <Input label="البريد الإلكتروني" type="email" value={form.email} onChange={set('email')} />
-        <Input label="رقم الهاتف" value={form.phoneE164} onChange={set('phoneE164')} placeholder="+10001234567" />
+        <Input label="الاسم" value={form.displayName} onChange={set('displayName')} placeholder="Mohamed Ahmed" />
         <Input label="كود الموظف" value={form.employeeCode} onChange={set('employeeCode')} placeholder="EMP-001" />
         <Input label="كلمة المرور" type="password" value={form.password} onChange={set('password')} />
 
         <div>
           <label className="text-sm font-semibold text-gray-800">{t('nav.branches')}</label>
           <select
-            value={form.employeeBranchId}
-            onChange={set('employeeBranchId')}
+            value={form.branchId}
+            onChange={set('branchId')}
             disabled={branchesLoading}
             className="mt-1.5 h-[48px] w-full rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-4 text-sm text-gray-900 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
           >
