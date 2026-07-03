@@ -128,6 +128,25 @@ export function LoginPage() {
                 style={{ background: 'linear-gradient(135deg, #5B34A7 0%, #7D5CEA 100%)' }}
               />
             </Button>
+
+            {/* Remember me + Forgot password */}
+            <div className="flex items-center justify-between mt-2">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-[#D7CCF6] text-[#6D3EEA] focus:ring-[#6D3EEA]/30 focus:ring-offset-0 transition-colors"
+                />
+                <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                  {isRtl ? 'تذكرني' : 'Remember me'}
+                </span>
+              </label>
+              <button
+                type="button"
+                className="text-sm font-medium text-[#6D3EEA] hover:text-[#5B34A7] transition-colors"
+              >
+                {isRtl ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+              </button>
+            </div>
           </form>
         </div>
       </motion.div>

@@ -1,26 +1,27 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Package, Truck, ChefHat, Store, TrendingUp } from 'lucide-react';
+import { ShoppingCart, Package, Truck, ChefHat, Store, TrendingUp, TrendingDown } from 'lucide-react';
 
-function MiniChart() {
+function MiniChart({ color = '#5B34A7', height = 24 }: { color?: string; height?: number }) {
   return (
-    <svg viewBox="0 0 60 24" className="w-full h-6" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5B34A7" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#5B34A7" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="12" width="6" height="12" rx="2" fill="#5B34A7" fillOpacity="0.15" />
-      <rect x="11" y="6" width="6" height="18" rx="2" fill="#5B34A7" fillOpacity="0.25" />
-      <rect x="20" y="9" width="6" height="15" rx="2" fill="#5B34A7" fillOpacity="0.15" />
-      <rect x="29" y="3" width="6" height="21" rx="2" fill="#5B34A7" fillOpacity="0.35" />
-      <rect x="38" y="7" width="6" height="17" rx="2" fill="#5B34A7" fillOpacity="0.2" />
-      <rect x="47" y="2" width="6" height="22" rx="2" fill="#5B34A7" fillOpacity="0.4" />
-      <rect x="56" y="4" width="6" height="20" rx="2" fill="#5B34A7" fillOpacity="0.3" />
-      <path d="M5 16 Q14 8 23 13 Q32 18 41 11 Q50 4 59 8" fill="none" stroke="#5B34A7" strokeWidth="1.5" strokeOpacity="0.5" />
-      <circle cx="59" cy="8" r="2" fill="#5B34A7" fillOpacity="0.6" />
+    <svg viewBox={`0 0 60 ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none">
+      <rect x="2" y={height * 0.5} width="6" height={height * 0.5} rx="2" fill={color} fillOpacity="0.15" />
+      <rect x="11" y={height * 0.25} width="6" height={height * 0.75} rx="2" fill={color} fillOpacity="0.25" />
+      <rect x="20" y={height * 0.38} width="6" height={height * 0.62} rx="2" fill={color} fillOpacity="0.15" />
+      <rect x="29" y={height * 0.12} width="6" height={height * 0.88} rx="2" fill={color} fillOpacity="0.35" />
+      <rect x="38" y={height * 0.29} width="6" height={height * 0.71} rx="2" fill={color} fillOpacity="0.2" />
+      <rect x="47" y={height * 0.08} width="6" height={height * 0.92} rx="2" fill={color} fillOpacity="0.4" />
+      <rect x="56" y={height * 0.17} width="6" height={height * 0.83} rx="2" fill={color} fillOpacity="0.3" />
     </svg>
+  );
+}
+
+function ChangeBadge({ value, isUp }: { value: string; isUp: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+      {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {value}
+    </span>
   );
 }
 
@@ -67,46 +68,72 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
+              {/* Orders — most important metric, spans full width */}
+              <div className="col-span-2 bg-gradient-to-br from-orange-50/80 to-orange-100/40 rounded-2xl p-5 flex flex-col gap-2 border border-orange-200/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200/50">
+                      <ShoppingCart className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-orange-700">{isRtl ? 'الطلبات' : 'Orders'}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-2xl font-bold text-orange-800">356</span>
+                        <ChangeBadge value="+12.5%" isUp />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-28">
+                    <MiniChart color="#EA580C" height={32} />
+                  </div>
+                </div>
+              </div>
+
               {/* Products */}
               <div className="bg-gradient-to-br from-green-50/80 to-green-100/40 rounded-2xl p-4 flex flex-col gap-2 border border-green-200/20">
                 <div className="flex items-center justify-between">
                   <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md shadow-green-200/50">
                     <Package className="h-[18px] w-[18px] text-white" />
                   </div>
-                  <MiniChart />
+                  <MiniChart color="#16A34A" />
                 </div>
                 <span className="text-xs font-semibold text-green-700">{isRtl ? 'المنتجات' : 'Products'}</span>
-                <span className="text-lg font-bold text-green-800">1,284</span>
-              </div>
-
-              {/* Orders */}
-              <div className="bg-gradient-to-br from-orange-50/80 to-orange-100/40 rounded-2xl p-4 flex flex-col gap-2 border border-orange-200/20">
-                <div className="flex items-center justify-between">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200/50">
-                    <ShoppingCart className="h-[18px] w-[18px] text-white" />
-                  </div>
-                  <MiniChart />
+                <div className="flex items-end justify-between">
+                  <span className="text-lg font-bold text-green-800">1,284</span>
+                  <ChangeBadge value="+4.2%" isUp />
                 </div>
-                <span className="text-xs font-semibold text-orange-700">{isRtl ? 'الطلبات' : 'Orders'}</span>
-                <span className="text-lg font-bold text-orange-800">356</span>
               </div>
 
               {/* Delivery */}
-              <div className="bg-gradient-to-br from-purple-50/80 to-purple-100/40 rounded-2xl p-4 flex flex-col items-center gap-2 border border-purple-200/20">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/50">
-                  <Truck className="h-[18px] w-[18px] text-white" />
+              <div className="bg-gradient-to-br from-purple-50/80 to-purple-100/40 rounded-2xl p-4 flex flex-col gap-2 border border-purple-200/20">
+                <div className="flex items-center justify-between">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/50">
+                    <Truck className="h-[18px] w-[18px] text-white" />
+                  </div>
+                  <MiniChart color="#5B34A7" />
                 </div>
                 <span className="text-xs font-semibold text-[#5B34A7]">{isRtl ? 'التوصيل' : 'Delivery'}</span>
-                <span className="text-lg font-bold text-[#5B34A7]">98%</span>
+                <div className="flex items-end justify-between">
+                  <span className="text-lg font-bold text-[#5B34A7]">98%</span>
+                  <ChangeBadge value="-0.8%" isUp={false} />
+                </div>
               </div>
 
-              {/* Chefs */}
-              <div className="bg-gradient-to-br from-amber-50/80 to-amber-100/40 rounded-2xl p-4 flex flex-col items-center gap-2 border border-amber-200/20">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200/50">
-                  <ChefHat className="h-[18px] w-[18px] text-white" />
+              {/* Chefs — spans full width on second row */}
+              <div className="col-span-2 bg-gradient-to-br from-amber-50/80 to-amber-100/40 rounded-2xl p-4 flex items-center justify-between border border-amber-200/20">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200/50">
+                    <ChefHat className="h-[18px] w-[18px] text-white" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-amber-700">{isRtl ? 'الشيفات' : 'Chefs'}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-lg font-bold text-amber-800">48</span>
+                      <ChangeBadge value="+2" isUp />
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-semibold text-amber-700">{isRtl ? 'الشيفات' : 'Chefs'}</span>
-                <span className="text-lg font-bold text-amber-800">48</span>
+                <MiniChart color="#D97706" />
               </div>
             </div>
           </div>
