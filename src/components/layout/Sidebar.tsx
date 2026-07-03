@@ -137,7 +137,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
         <button
           onClick={onToggle}
           title={collapsed ? t('nav.expand') : t('nav.collapse')}
-          className="absolute -end-3 top-[22px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white text-primary shadow-sm transition-all hover:border-sidebar-accent/50 hover:text-sidebar-accent hover:shadow-md focus:outline-none"
+          className="absolute -end-3 top-5 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white text-primary shadow-sm transition-all hover:border-sidebar-accent/50 hover:text-sidebar-accent hover:shadow-md focus:outline-none"
         >
           {collapsed
             ? isRtl ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
@@ -149,12 +149,12 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
       <div className="flex h-full flex-col">
         {/* Logo header */}
         <div className={cn(
-          'flex shrink-0 items-center border-b border-sidebar-border transition-all duration-300',
-          collapsed ? 'h-16 justify-center px-1' : 'h-16 gap-3 px-4'
+          'shrink-0 border-b border-sidebar-border transition-all duration-300',
+          collapsed ? 'flex h-16 items-center justify-center' : 'flex flex-col items-center pt-5 pb-3'
         )}>
           <div className={cn(
-            'flex shrink-0 items-center justify-center rounded-lg bg-white p-1 transition-all duration-300',
-            collapsed ? 'h-9 w-9' : 'h-9 w-9'
+            'flex shrink-0 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300',
+            collapsed ? 'h-10 w-10 p-[5px]' : 'h-[52px] w-[52px] p-[6px]'
           )}>
             <img
               src="/logo.png"
@@ -163,9 +163,9 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
             />
           </div>
           {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-white tracking-tight">{branding.shortName}</p>
-              <p className="truncate text-[11px] font-medium text-white/50">{branding.tagline}</p>
+            <div className="mt-2 text-center">
+              <p className="text-sm font-bold text-white tracking-tight">{branding.name}</p>
+              <p className="text-[11px] font-medium text-white/45 mt-0.5">{branding.tagline}</p>
             </div>
           )}
         </div>
