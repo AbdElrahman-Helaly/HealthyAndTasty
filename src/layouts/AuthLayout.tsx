@@ -40,14 +40,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808004_1px,transparent_1px),linear-gradient(to_bottom,#80808004_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
 
       {/* Left illustration panel */}
-      <div className="hidden lg:flex w-[45%] xl:w-1/2 relative items-center justify-center p-6 xl:p-10">
-        <div className="relative z-10 flex flex-col items-center gap-4 w-full max-w-xl mx-auto">
+      <div className="hidden lg:flex w-[48%] xl:w-[48%] relative items-center justify-center p-4 xl:p-6">
+        <div className="relative z-10 flex flex-col items-center gap-2 w-full max-w-xl mx-auto">
           {/* Decorative elements */}
           <div className="absolute -top-16 -start-16 w-56 h-56 rounded-full bg-purple-200/30 blur-[80px] pointer-events-none" />
           <div className="absolute -bottom-16 -end-16 w-56 h-56 rounded-full bg-purple-200/20 blur-[80px] pointer-events-none" />
 
           {/* Main illustration card */}
-          <div className="relative bg-white/75 backdrop-blur-lg rounded-[24px] p-6 shadow-[0_16px_48px_rgba(44,20,88,0.07)] border border-purple-100/50 w-full">
+          <div className="relative bg-white/80 backdrop-blur-md rounded-[24px] p-6 shadow-[0_16px_48px_rgba(44,20,88,0.10)] border border-purple-200/60 w-full">
             {/* Today's Overview */}
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-3.5 w-3.5 text-purple-500" />
@@ -58,7 +58,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
             <div className="grid grid-cols-2 gap-3">
               {/* Header */}
-              <div className="col-span-2 flex items-center gap-3 bg-gradient-to-br from-purple-100 to-purple-200/60 rounded-xl p-3 border border-purple-200/40 shadow-sm">
+              <div className="col-span-2 flex items-center gap-3 bg-gradient-to-br from-purple-100 to-purple-200/70 rounded-xl p-3 border border-purple-300/50 shadow-sm">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/60">
                   <Store className="h-5 w-5 text-white" />
                 </div>
@@ -69,7 +69,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Orders */}
-              <div className="col-span-2 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-4 flex flex-col gap-1.5 border border-orange-200/40 shadow-sm">
+              <div className="col-span-2 bg-gradient-to-br from-orange-50 to-orange-100/60 rounded-xl p-4 flex flex-col gap-1.5 border border-orange-300/50 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200/50">
@@ -90,7 +90,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Products */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-3 flex flex-col gap-1.5 border border-green-200/30 shadow-sm">
+              <div className="bg-gradient-to-br from-green-50 to-green-100/60 rounded-xl p-3 flex flex-col gap-1.5 border border-green-300/50 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md shadow-green-200/50">
                     <Package className="h-4 w-4 text-white" />
@@ -105,7 +105,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Delivery */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 flex flex-col gap-1.5 border border-purple-200/30 shadow-sm">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 rounded-xl p-3 flex flex-col gap-1.5 border border-purple-300/50 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/50">
                     <Truck className="h-4 w-4 text-white" />
@@ -120,7 +120,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* Chefs */}
-              <div className="col-span-2 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-3 flex items-center justify-between border border-amber-200/30 shadow-sm">
+              <div className="col-span-2 bg-gradient-to-br from-amber-50 to-amber-100/60 rounded-xl p-3 flex items-center justify-between border border-amber-300/50 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200/50">
                     <ChefHat className="h-4 w-4 text-white" />
@@ -149,19 +149,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-6 relative">
         <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-purple-300/15 blur-[100px] pointer-events-none" />
-
-        {/* Ticker */}
-        <div className="relative z-10 w-full max-w-sm xl:max-w-md mb-2 overflow-hidden rounded-xl bg-white/70 backdrop-blur-sm border border-purple-100/40 px-4 py-2 shadow-sm">
-          <div className="overflow-hidden">
-            <span className="block animate-marquee-once whitespace-nowrap text-[11px] font-semibold text-[#5B34A7]">
-              {isRtl
-                ? '⭐ هيلثي اند تيستي — علامة تجارية رائدة تقدم بدائل صحية لآلاف العملاء في الدول العربية'
-                : '⭐ Healthy & Tasty — A leading brand providing healthy alternatives to thousands across the Arab world'}
-            </span>
-          </div>
-        </div>
 
         <main className="relative z-10 w-full max-w-sm xl:max-w-md">
           {children}

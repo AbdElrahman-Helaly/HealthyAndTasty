@@ -12,6 +12,11 @@ export const en = {
     addresses: 'Addresses',
     banners: 'Banners',
     discounts: 'Discounts',
+    sectionManagement: 'Management',
+    sectionMarketing: 'Marketing',
+    sectionSystem: 'System',
+    expand: 'Expand',
+    collapse: 'Collapse',
   },
   common: {
     search: 'Search...',

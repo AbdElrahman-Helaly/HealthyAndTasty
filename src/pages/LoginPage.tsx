@@ -54,30 +54,30 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="bg-white rounded-[20px] p-6 sm:p-8 shadow-[0_20px_50px_rgba(30,20,80,0.07)] border border-purple-100/50">
+        <div className="bg-white rounded-[20px] p-5 sm:p-6 shadow-[0_20px_50px_rgba(30,20,80,0.07)] border border-purple-100/50">
           {/* Logo */}
-          <div className="mb-6 flex justify-center">
-            <div className="relative flex h-16 w-auto min-w-[110px] px-5 items-center justify-center rounded-[16px] bg-gradient-to-br from-slate-900 to-slate-950 shadow-[0_10px_24px_rgba(40,20,80,0.10)] ring-1 ring-white/15 transition-all duration-300 hover:scale-105 hover:ring-purple-400/30">
+          <div className="mb-4 flex justify-center">
+            <div className="relative flex h-14 w-auto min-w-[100px] px-4 items-center justify-center rounded-[16px] bg-gradient-to-br from-slate-900 to-slate-950 shadow-[0_8px_20px_rgba(40,20,80,0.08)] ring-1 ring-white/15 transition-all duration-300 hover:scale-105 hover:ring-purple-400/30">
               <div className="absolute inset-0 rounded-[16px] bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
               <img
                 src="/logo.png"
                 alt={branding.name}
-                className="h-12 w-auto max-w-[180px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                className="h-[44px] w-auto max-w-[160px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />
             </div>
           </div>
 
           {/* Title & subtitle */}
-          <div className="text-center mb-6">
-            <h2 className="mb-2 text-[26px] font-bold text-gray-900 tracking-tight">
+          <div className="text-center mb-4">
+            <h2 className="mb-1 text-[22px] font-bold text-gray-900 tracking-tight">
               {t('auth.loginTitle')}
             </h2>
-            <p className="text-sm text-[#7A7A7A] font-medium leading-relaxed">
+            <p className="text-sm text-[#888888] font-medium leading-relaxed">
               {t('auth.loginSubtitle')}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
             <Input
               label={t('auth.employeeCode')}
               type="text"
@@ -114,7 +114,7 @@ export function LoginPage() {
               type="submit"
               size="lg"
               loading={isLoading}
-              className="group relative w-full h-[50px] font-semibold text-sm rounded-[12px] overflow-hidden transition-all duration-300 shadow-lg shadow-purple-300/40 hover:shadow-xl hover:shadow-purple-400/50 hover:-translate-y-0.5 active:translate-y-0"
+              className="group relative w-full h-[48px] font-semibold text-sm rounded-[12px] overflow-hidden transition-all duration-300 shadow-lg shadow-purple-300/40 hover:shadow-xl hover:shadow-purple-400/50 hover:-translate-y-0.5 active:translate-y-0"
               style={{
                 background: 'linear-gradient(135deg, #4E2F88 0%, #6D3EEA 100%)',
               }}
@@ -129,7 +129,7 @@ export function LoginPage() {
             </Button>
 
             {/* Remember me + Forgot password */}
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-0">
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input
                   type="checkbox"

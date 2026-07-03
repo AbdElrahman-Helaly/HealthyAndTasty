@@ -14,6 +14,11 @@ export const ar: TranslationKeys = {
     addresses: 'العناوين',
     banners: 'البانرات',
     discounts: 'الخصومات',
+    sectionManagement: 'الإدارة',
+    sectionMarketing: 'التسويق',
+    sectionSystem: 'النظام',
+    expand: 'توسيع',
+    collapse: 'طي',
   },
   common: {
     search: 'بحث...',

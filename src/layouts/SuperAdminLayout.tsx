@@ -16,10 +16,7 @@ export function SuperAdminLayout() {
   );
 
   return (
-    // h-screen مع overflow-hidden هنا تمنع الصفحة كاملة من الـ Scroll لخارج الشاشة
     <div className="flex h-screen w-screen overflow-hidden bg-background">
-
-      {/* السايد بار أصبح ثابتاً في مكانه تماماً بفضل محاذاة الهيكل */}
       <Sidebar collapsed={collapsed} onToggle={toggle} />
 
       <AnimatePresence>
@@ -29,7 +26,7 @@ export function SuperAdminLayout() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
               onClick={closeMobile}
             />
             <Sidebar collapsed={false} onToggle={toggle} mobile onMobileClose={closeMobile} />
@@ -37,17 +34,15 @@ export function SuperAdminLayout() {
         )}
       </AnimatePresence>
 
-      {/* الجزء الأيمن بالكامل يأخذ الارتفاع الكامل ويمنع التسريب البصري */}
       <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
         <TopNav onMenuClick={openMobile} unreadCount={unreadCount} />
 
-        {/* الـ main هنا هو الوحيد المسموح له بعمل scroll للمحتوى بداخل الصفحات */}
-        <main className="flex-1 overflow-y-auto p-5 md:p-8 custom-scrollbar">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 overflow-y-auto p-5 md:p-6 custom-scrollbar">
+          <div className="mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
             >
               <Outlet />
             </motion.div>

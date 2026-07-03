@@ -9,19 +9,18 @@ import {
   Building2,
   Users,
   Package,
+  MapPin,
+  Image,
+  Tag,
   Bell,
   ScrollText,
   Settings,
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  Image,
-  Tag,
 } from 'lucide-react';
 import { branding } from '@/config/branding';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { getInitials } from '@/lib/utils';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -30,68 +29,132 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' as const },
-  { to: '/countries', icon: Globe, labelKey: 'nav.countries' as const },
-  { to: '/categories', icon: FolderTree, labelKey: 'nav.categories' as const },
-  { to: '/branches', icon: Building2, labelKey: 'nav.branches' as const },
-  { to: '/employees', icon: Users, labelKey: 'nav.employees' as const },
-  { to: '/products', icon: Package, labelKey: 'nav.products' as const },
-  { to: '/addresses', icon: MapPin, labelKey: 'nav.addresses' as const },
-  { to: '/banners', icon: Image, labelKey: 'nav.banners' as const },
-  { to: '/discounts', icon: Tag, labelKey: 'nav.discounts' as const },
-  { to: '/notifications', icon: Bell, labelKey: 'nav.notifications' as const },
-  { to: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' as const },
-  { to: '/settings', icon: Settings, labelKey: 'nav.settings' as const },
+interface NavItem {
+  to: string;
+  icon: typeof LayoutDashboard;
+  labelKey: string;
+}
+
+interface NavGroup {
+  labelKey?: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    items: [{ to: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' }],
+  },
+  {
+    labelKey: 'nav.sectionManagement',
+    items: [
+      { to: '/countries', icon: Globe, labelKey: 'nav.countries' },
+      { to: '/categories', icon: FolderTree, labelKey: 'nav.categories' },
+      { to: '/branches', icon: Building2, labelKey: 'nav.branches' },
+      { to: '/employees', icon: Users, labelKey: 'nav.employees' },
+      { to: '/products', icon: Package, labelKey: 'nav.products' },
+      { to: '/addresses', icon: MapPin, labelKey: 'nav.addresses' },
+    ],
+  },
+  {
+    labelKey: 'nav.sectionMarketing',
+    items: [
+      { to: '/banners', icon: Image, labelKey: 'nav.banners' },
+      { to: '/discounts', icon: Tag, labelKey: 'nav.discounts' },
+      { to: '/notifications', icon: Bell, labelKey: 'nav.notifications' },
+    ],
+  },
+  {
+    labelKey: 'nav.sectionSystem',
+    items: [
+      { to: '/audit-logs', icon: ScrollText, labelKey: 'nav.auditLogs' },
+      { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
+    ],
+  },
 ];
+
+function SidebarNavItem({ item, collapsed, onMobileClose }: { item: NavItem; collapsed: boolean; onMobileClose?: () => void }) {
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
+
+  return (
+    <NavLink
+      to={item.to}
+      onClick={onMobileClose}
+      title={collapsed ? t(item.labelKey) : undefined}
+      className={({ isActive }) =>
+        cn(
+          'sidebar-nav-item group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+          collapsed ? 'justify-center mx-2' : 'mx-2',
+          isActive
+            ? 'bg-sidebar-item-active text-sidebar-text-active'
+            : 'text-sidebar-text/70 hover:bg-sidebar-item-hover hover:text-sidebar-text hover:translate-x-0.5 rtl:hover:-translate-x-0.5'
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <motion.span
+              layoutId={collapsed ? 'activeTabCollapsed' : 'activeTab'}
+              className={cn(
+                'absolute top-1/2 -translate-y-1/2 w-[3px] rounded-full bg-primary',
+                isRtl ? 'right-0' : 'left-0'
+              )}
+              style={{ height: '20px' }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
+            />
+          )}
+          <item.icon className={cn(
+            'h-[18px] w-[18px] shrink-0 transition-all duration-150',
+            isActive ? 'text-sidebar-icon-active' : 'text-sidebar-icon/60 group-hover:text-sidebar-icon'
+          )} />
+          {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMobileClose }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const isRtl = i18n.dir() === 'rtl';
 
-  const width = mobile ? 260 : collapsed ? 80 : 260;
+  const width = mobile ? 260 : collapsed ? 72 : 240;
 
   return (
     <motion.aside
       animate={{ width }}
-      transition={{ duration: 0.3, type: 'spring', bounce: 0, damping: 20 }}
+      transition={{ duration: 0.25, type: 'spring', bounce: 0, damping: 22 }}
       className={cn(
-        // 🌟 تعديل: شلنا overflow-hidden ورفعنا الـ z-index لـ z-50 عشان الزرار يظهر كامل وفوق كل الصفحات
-        'gradient-primary relative flex h-screen shrink-0 flex-col z-50 sticky top-0',
-        !mobile && 'shadow-[4px_0_24px_rgba(0,0,0,0.05)]',
-        mobile && 'fixed inset-y-0 start-0 z-50 w-[260px] shadow-2xl'
+        'relative flex h-screen shrink-0 flex-col bg-sidebar-bg shadow-sidebar',
+        !mobile && 'sticky top-0',
+        mobile && 'fixed inset-y-0 start-0 z-50 shadow-2xl'
       )}
     >
-      {/* طبقة شفافة لتخفيف حدة الألوان الأصلية وجعلها مريحة للعين */}
-      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-
-      {/* زر الفتح والقفل العائم - الآن سيظهر كاملاً فوق أي محتوى جانبي */}
+      {/* Toggle button */}
       {!mobile && (
         <button
           onClick={onToggle}
           title={collapsed ? t('nav.expand') : t('nav.collapse')}
-          className="absolute -end-4 top-8 z-[60] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-blue-600 shadow-md ring-4 ring-white/10 transition-all hover:scale-110 hover:shadow-lg focus:outline-none"
+          className="absolute -end-3 top-[22px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-white text-sidebar-text/50 shadow-sm transition-all hover:border-primary/30 hover:text-primary hover:shadow-md focus:outline-none"
         >
           {collapsed
-            ? isRtl ? <ChevronLeft className="h-4 w-4 stroke-[2.5]" /> : <ChevronRight className="h-4 w-4 stroke-[2.5]" />
-            : isRtl ? <ChevronRight className="h-4 w-4 stroke-[2.5]" /> : <ChevronLeft className="h-4 w-4 stroke-[2.5]" />
+            ? isRtl ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+            : isRtl ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />
           }
         </button>
       )}
 
-      {/* المحتوى الداخلي للسايد بار (هنا الـ overflow-hidden الصح عشان يحمي القائمة بس) */}
-      <div className="relative z-10 flex h-full flex-col overflow-hidden">
-
-        {/* Header */}
+      <div className="flex h-full flex-col">
+        {/* Logo header */}
         <div className={cn(
-          "flex h-24 items-center shrink-0 px-5 transition-all duration-300",
-          collapsed ? "justify-center px-0" : "gap-4"
+          'flex shrink-0 items-center border-b border-sidebar-border transition-all duration-300',
+          collapsed ? 'h-16 justify-center px-1' : 'h-16 gap-3 px-4'
         )}>
-          {/* إطار أبيض أنيق للوجو لضمان وضوحه */}
           <div className={cn(
-            "flex shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm transition-all duration-300",
-            collapsed ? "h-11 w-11" : "h-12 w-12"
+            'flex shrink-0 items-center justify-center rounded-lg transition-all duration-300',
+            collapsed ? 'h-9 w-9' : 'h-9 w-9'
           )}>
             <img
               src="/logo.png"
@@ -99,75 +162,52 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
               className="h-full w-full object-contain"
             />
           </div>
-
           {!collapsed && (
-            <div className="min-w-0 flex-1 animate-in fade-in duration-500">
-              <p className="truncate text-base font-bold text-white tracking-wide">{branding.name}</p>
-              <p className="truncate text-xs font-medium text-white/70">{branding.tagline}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-on-surface tracking-tight">{branding.shortName}</p>
+              <p className="truncate text-[11px] font-medium text-on-surface-variant/70">{branding.tagline}</p>
             </div>
           )}
         </div>
 
-        <div className="mx-4 mb-4 border-b border-white/10" />
-
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 pb-6 flex flex-col gap-1 custom-scrollbar">
-          {navItems.map(({ to, icon: Icon, labelKey }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onMobileClose}
-              title={collapsed ? t(labelKey) : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'group relative flex items-center gap-3.5 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 ease-out',
-                  collapsed ? 'justify-center' : '',
-                  isActive
-                    ? 'bg-white/20 text-white shadow-[0_2px_10px_rgba(0,0,0,0.1)] backdrop-blur-sm'
-                    : 'text-white/70 hover:bg-white/10 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && !collapsed && (
-                    <motion.span
-                      layoutId="activeTab"
-                      className="absolute inset-y-2 start-0 w-1 rounded-full bg-white drop-shadow-md"
-                    />
-                  )}
-                  {isActive && collapsed && (
-                    <motion.span
-                      layoutId="activeTabCollapsed"
-                      className="absolute inset-x-2 bottom-0 h-1 rounded-full bg-white drop-shadow-md"
-                    />
-                  )}
-
-                  <Icon className={cn(
-                    'h-5 w-5 shrink-0 transition-all duration-200',
-                    isActive ? 'text-white scale-110 drop-shadow-md' : 'text-white/70 group-hover:text-white'
-                  )} />
-
-                  {!collapsed && <span className="truncate">{t(labelKey)}</span>}
-                </>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-3 custom-scrollbar">
+          {navGroups.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
+              {group.labelKey && !collapsed && (
+                <div className="px-5 pb-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-heading">
+                    {t(group.labelKey)}
+                  </span>
+                </div>
               )}
-            </NavLink>
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <SidebarNavItem
+                    key={item.to}
+                    item={item}
+                    collapsed={collapsed}
+                    onMobileClose={onMobileClose}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
         {/* User footer */}
-        <div className="border-t border-white/10 p-4 shrink-0 bg-black/10 backdrop-blur-sm">
-          <div className={cn('flex items-center gap-3 transition-all', collapsed && 'justify-center')}>
+        <div className="shrink-0 border-t border-sidebar-footer-border px-3 py-3">
+          <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-2.5 px-1')}>
             <div
               title={collapsed ? (user?.displayName ?? '') : undefined}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border-2 border-white/20 text-sm font-bold text-gray-800 shadow-sm transition-transform hover:scale-105"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary transition-transform hover:scale-105"
             >
               {getInitials(user?.displayName ?? 'SA')}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{user?.displayName}</p>
-                <p className="truncate text-xs text-white/70 mt-0.5">{user?.roleName}</p>
+                <p className="truncate text-sm font-medium text-on-surface">{user?.displayName}</p>
+                <p className="truncate text-xs text-on-surface-variant/70">{user?.roleName}</p>
               </div>
             )}
           </div>

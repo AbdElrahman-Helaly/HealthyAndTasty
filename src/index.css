@@ -4,34 +4,48 @@
   --color-primary: #40296e;
   --color-primary-dark: #2a1057;
   --color-primary-light: #755ea5;
-  --color-primary-surface: #f7f3ff;
+  --color-primary-surface: #f4f0ff;
+  --color-primary-lighter: #e8e0ff;
   --color-accent: #ff8f00;
   --color-accent-dark: #562c00;
-  --color-background: #fef7fe;
-  --color-surface: #fef7fe;
-  --color-surface-container: #f2ecf3;
-  --color-surface-container-high: #ece6ed;
-  --color-surface-container-highest: #e7e1e7;
-  --color-on-surface: #1d1b20;
-  --color-on-surface-variant: #494550;
-  --color-outline: #7a7581;
-  --color-outline-variant: #cbc4d1;
-  --color-error: #ba1a1a;
-  --color-success: #388e3c;
-  --color-warning: #f9a825;
-  --color-info: #1565c0;
+  --color-background: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-surface-container: #f1f3f5;
+  --color-surface-container-high: #e9ecef;
+  --color-surface-container-highest: #dee2e6;
+  --color-on-surface: #1a1d23;
+  --color-on-surface-variant: #6c7278;
+  --color-outline: #989ea6;
+  --color-outline-variant: #d1d5db;
+  --color-error: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-info: #2563eb;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  --color-sidebar-bg: #fafbff;
+  --color-sidebar-border: #eef0f5;
+  --color-sidebar-item-hover: #f1f3f9;
+  --color-sidebar-item-active: #f4f0ff;
+  --color-sidebar-text: #4b5563;
+  --color-sidebar-text-active: #40296e;
+  --color-sidebar-icon: #9ca3af;
+  --color-sidebar-icon-active: #40296e;
+  --color-sidebar-heading: #9ca3af;
+  --color-sidebar-footer-border: #eef0f5;
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-  --shadow-card: 0 4px 24px rgb(64 41 110 / 0.09);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.06), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-sidebar: 0 0 0 1px rgb(0 0 0 / 0.03), 1px 0 8px rgb(0 0 0 / 0.04);
 
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-arabic: Cairo, Inter, ui-sans-serif, sans-serif;
@@ -52,6 +66,7 @@ body {
   background: var(--color-background);
   color: var(--color-on-surface);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-arabic {
@@ -59,16 +74,11 @@ body {
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, #2a1057 0%, #40296e 50%, #755ea5 100%);
+  background: linear-gradient(135deg, #40296e 0%, #5b3e9e 100%);
 }
 
 .gradient-accent {
   background: linear-gradient(135deg, #ff8f00 0%, #ffb300 100%);
-}
-
-.glass-card {
-  background: rgb(255 255 255 / 0.15);
-  backdrop-filter: blur(20px);
 }
 
 .skeleton {
@@ -87,23 +97,13 @@ body {
   100% { background-position: -200% 0; }
 }
 
-@keyframes marquee-once {
-  0% { transform: translateX(75%); }
-  100% { transform: translateX(-75%); }
-}
-
-.animate-marquee-once {
-  display: inline-block;
-  animation: marquee-once 12s ease-in-out forwards;
-}
-
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-surface-container);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -111,8 +111,21 @@ body {
   border-radius: 9999px;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+[dir="rtl"] .sidebar-nav-item {
+  border-left: none;
+  border-right: 2px solid transparent;
+}
+
+[dir="rtl"] .sidebar-nav-item.active {
+  border-right-color: var(--color-primary);
 }
