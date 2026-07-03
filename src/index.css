@@ -87,6 +87,16 @@ body {
   100% { background-position: -200% 0; }
 }
 
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 20s linear infinite;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
