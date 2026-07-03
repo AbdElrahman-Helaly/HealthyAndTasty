@@ -84,21 +84,7 @@ function MultiSelect({
           ) : (
             options.map((opt) => {
               const isSelected = value.includes(opt.id);
-  const typeLabels: Record<string, string> = {
-    Percentage: 'نسبة مئوية',
-    FixedAmount: 'قيمة ثابتة',
-    BuyXGetY: 'اشتر X واحصل على Y',
-    Bundle: 'حزمة منتجات',
-    FreeShipping: 'شحن مجاني',
-    Tiered: 'متدرج',
-  };
-
-  const targetLabels: Record<string, string> = {
-    AllProducts: 'جميع المنتجات',
-    SpecificProducts: 'منتجات محددة',
-    SpecificCategories: 'فئات محددة',
-    OrderLevel: 'مستوى الطلب',
-  };
+              return (
                 <label
                   key={opt.id}
                   className="flex cursor-pointer items-center px-3 py-2 hover:bg-surface-container/50"
