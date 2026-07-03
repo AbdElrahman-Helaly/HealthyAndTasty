@@ -16,7 +16,7 @@ import { createBranchEmployee } from '@/services/branch.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCountry } from '@/context/CountryContext';
 import { formatDate } from '@/lib/utils';
-import type { Employee, EmployeeUpdateRequest } from '@/types';
+import type { BranchEmployee, EmployeeUpdateRequest } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Skeleton row component for loading state
@@ -26,7 +26,7 @@ function SkeletonRows({ count = 8 }: { count?: number }) {
     <>
       {Array.from({ length: count }).map((_, i) => (
         <tr key={i} className="border-b border-outline-variant/20">
-          {[120, 100, 100, 160, 100, 120, 80].map((w, j) => (
+          {[120, 200, 150, 80].map((w, j) => (
             <td key={j} className="px-4 py-3">
               <LoadingSkeleton className={`h-4 w-[${w}px]`} />
             </td>
@@ -410,7 +410,7 @@ export function EmployeesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BranchEmployee | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -432,45 +432,28 @@ export function EmployeesPage() {
     {
       key: 'code',
       header: 'Employee Code',
-      render: (row: Employee) => (
+      render: (row: BranchEmployee) => (
         <span className="font-mono text-sm text-primary">{row.employeeCode || '—'}</span>
       ),
     },
     {
-      key: 'firstName',
-      header: 'First Name',
-      render: (row: Employee) => row.firstName,
-    },
-    {
-      key: 'lastName',
-      header: 'Last Name',
-      render: (row: Employee) => row.lastName,
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      render: (row: Employee) => (
-        <span className="text-on-surface-variant">{row.email}</span>
+      key: 'employeeName',
+      header: 'Employee Name',
+      render: (row: BranchEmployee) => (
+        <span className="font-medium text-on-surface">{row.employeeName || '—'}</span>
       ),
     },
     {
-      key: 'branch',
-      header: 'Branch ID',
-      render: (row: Employee) => (
-        <span className="font-mono text-xs text-on-surface-variant">
-          {row.employeeBranchId ? row.employeeBranchId.slice(0, 8) + '…' : '—'}
-        </span>
+      key: 'branchName',
+      header: 'Branch',
+      render: (row: BranchEmployee) => (
+        <span className="text-sm text-on-surface-variant">{row.branchName || '—'}</span>
       ),
-    },
-    {
-      key: 'createdAt',
-      header: 'Created',
-      render: (row: Employee) => formatDate(row.createdAt),
     },
     {
       key: 'actions',
       header: t('common.actions'),
-      render: (row: Employee) => (
+      render: (row: BranchEmployee) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
@@ -532,7 +515,7 @@ export function EmployeesPage() {
             <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-outline-variant/40">
-                  {['Employee Code', 'First Name', 'Last Name', 'Email', 'Branch ID', 'Created', 'Actions'].map(
+                  {['Employee Code', 'Employee Name', 'Branch', 'Actions'].map(
                     (h) => (
                       <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-on-surface-variant">
                         {h}
@@ -616,7 +599,7 @@ export function EmployeesPage() {
         message={
           deleteError
             ? `Error: ${deleteError}. Try again?`
-            : `Delete "${deleteTarget?.displayName}"? This cannot be undone.`
+            : `Delete "${deleteTarget?.employeeName}"? This cannot be undone.`
         }
       />
     </div>

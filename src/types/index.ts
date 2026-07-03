@@ -129,10 +129,8 @@ export interface BranchEmployee {
   id: string;
   branchId: string;
   employeeCode: string;
-  displayName: string;
-  roleName: string;
-  isActive: boolean;
-  createdAt: string;
+  employeeName: string;
+  branchName: string;
 }
 
 export interface CreateBranchEmployeeRequest {

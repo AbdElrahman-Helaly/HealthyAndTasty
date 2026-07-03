@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getEmployeeById,
-  getEmployees,
   getRoles,
 } from '@/services/employee.service';
+import { getAllBranchEmployees } from '@/services/branch.service';
 import { useAsync } from './useAsync';
-import type { ApiRole, CursorPagedResponse, Employee, EmployeeDetails } from '@/types';
+import type { ApiRole, BranchEmployee, EmployeeDetails, PaginatedResponse } from '@/types';
 
 // ---------------------------------------------------------------------------
-// useEmployees — cursor-based paginated list
+// useEmployees — page-based branch-employees list
 // ---------------------------------------------------------------------------
 
 interface UseEmployeesState {
-  items: Employee[];
-  nextCursor: string | null;
+  items: BranchEmployee[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
   isLoading: boolean;
   isFetchingMore: boolean;
   error: Error | null;
@@ -25,8 +27,9 @@ interface UseEmployeesState {
 const PAGE_SIZE = 20;
 
 export function useEmployees(): UseEmployeesState {
-  const [items, setItems] = useState<Employee[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [items, setItems] = useState<BranchEmployee[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -47,11 +50,12 @@ export function useEmployees(): UseEmployeesState {
     setIsLoading(true);
     setError(null);
 
-    getEmployees(PAGE_SIZE)
-      .then((page: CursorPagedResponse<Employee>) => {
+    getAllBranchEmployees(1, PAGE_SIZE)
+      .then((pageResult: PaginatedResponse<BranchEmployee>) => {
         if (cancelled || !mounted.current) return;
-        setItems(page.items);
-        setNextCursor(page.nextCursor);
+        setItems(pageResult.items);
+        setTotalCount(pageResult.total);
+        setPage(pageResult.page);
         setIsLoading(false);
       })
       .catch((err: unknown) => {
@@ -67,19 +71,22 @@ export function useEmployees(): UseEmployeesState {
 
   const refetch = useCallback(() => {
     setItems([]);
-    setNextCursor(null);
+    setTotalCount(0);
+    setPage(1);
     setTick((t) => t + 1);
   }, []);
 
   const loadMore = useCallback(() => {
-    if (!nextCursor || isFetchingMore) return;
+    if (isFetchingMore) return;
     setIsFetchingMore(true);
 
-    getEmployees(PAGE_SIZE, nextCursor)
-      .then((page: CursorPagedResponse<Employee>) => {
+    const nextPage = page + 1;
+    getAllBranchEmployees(nextPage, PAGE_SIZE)
+      .then((pageResult: PaginatedResponse<BranchEmployee>) => {
         if (!mounted.current) return;
-        setItems((prev) => [...prev, ...page.items]);
-        setNextCursor(page.nextCursor);
+        setItems((prev) => [...prev, ...pageResult.items]);
+        setTotalCount(pageResult.total);
+        setPage(pageResult.page);
         setIsFetchingMore(false);
       })
       .catch((err: unknown) => {
@@ -87,17 +94,19 @@ export function useEmployees(): UseEmployeesState {
         setError(err instanceof Error ? err : new Error(String(err)));
         setIsFetchingMore(false);
       });
-  }, [nextCursor, isFetchingMore]);
+  }, [page, isFetchingMore]);
 
   return {
     items,
-    nextCursor,
+    totalCount,
+    page,
+    pageSize: PAGE_SIZE,
     isLoading,
     isFetchingMore,
     error,
     refetch,
     loadMore,
-    hasMore: nextCursor !== null,
+    hasMore: items.length < totalCount,
   };
 }
 

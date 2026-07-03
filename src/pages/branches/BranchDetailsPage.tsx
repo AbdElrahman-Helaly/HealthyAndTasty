@@ -9,20 +9,18 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { StatusBadge } from '@/components/ui/Badge';
-import { PageLoader, LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
-import { ConfirmDialog } from '@/components/ui/Modal';
+import { PageLoader, LoadingSkeleton } from '@/components/ui/Spinner';
+
 import {
   useBranchDetails,
   useBranchEmployees,
-  useBranchEmployeeRoles,
 } from '@/hooks/useBranchDetails';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   createBranchEmployee,
-  changeBranchEmployeeRole,
   updateBranch,
 } from '@/services/branch.service';
-import { formatDate } from '@/lib/utils';
+
 import type { BranchEmployee, CreateBranchEmployeeRequest } from '@/types';
 
 function validateEmployeePassword(password: string): string | null {
@@ -160,33 +158,8 @@ interface BranchEmployeesSectionProps {
 function BranchEmployeesSection({ branchId }: BranchEmployeesSectionProps) {
   const { data, isLoading, error, refetch, page, setPage, pageSize } =
     useBranchEmployees(branchId);
-  const { data: roles } = useBranchEmployeeRoles();
 
   const [addOpen, setAddOpen] = useState(false);
-  const [pendingRole, setPendingRole] = useState<{
-    employee: BranchEmployee;
-    role: string;
-  } | null>(null);
-  const [roleChanging, setRoleChanging] = useState(false);
-  const [roleError, setRoleError] = useState<string | null>(null);
-
-  const handleRoleConfirm = async () => {
-    if (!pendingRole) return;
-    setRoleChanging(true);
-    setRoleError(null);
-    try {
-      await changeBranchEmployeeRole(pendingRole.employee.id, {
-        roleName: pendingRole.role,
-      });
-      setPendingRole(null);
-      refetch();
-    } catch (err) {
-      setRoleError(err instanceof Error ? err.message : 'Failed to change role');
-      setPendingRole(null);
-    } finally {
-      setRoleChanging(false);
-    }
-  };
 
   const employees = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -204,44 +177,15 @@ function BranchEmployeesSection({ branchId }: BranchEmployeesSectionProps) {
       key: 'name',
       header: 'Name',
       render: (row: BranchEmployee) => (
-        <span className="font-medium">{row.displayName || '—'}</span>
+        <span className="font-medium">{row.employeeName || '—'}</span>
       ),
     },
     {
-      key: 'role',
-      header: 'Role',
+      key: 'branchName',
+      header: 'Branch',
       render: (row: BranchEmployee) => (
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <span className="text-sm">{row.roleName}</span>
-          {roleError && <span className="text-xs text-error">{roleError}</span>}
-          <select
-            className="h-8 rounded-lg border border-outline-variant bg-surface px-2 text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-            disabled={roleChanging}
-            onChange={(e) =>
-              e.target.value && setPendingRole({ employee: row, role: e.target.value })
-            }
-            defaultValue=""
-          >
-            <option value="">Change…</option>
-            {roles.map((r, i) => (
-              <option key={r.name || `role-${i}`} value={r.name}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          {roleChanging && <Spinner className="h-4 w-4" />}
-        </div>
+        <span className="text-sm text-on-surface-variant">{row.branchName || '—'}</span>
       ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row: BranchEmployee) => <StatusBadge active={row.isActive} />,
-    },
-    {
-      key: 'created',
-      header: 'Created',
-      render: (row: BranchEmployee) => formatDate(row.createdAt),
     },
   ];
 
@@ -335,17 +279,7 @@ function BranchEmployeesSection({ branchId }: BranchEmployeesSectionProps) {
         onClose={() => setAddOpen(false)}
         onCreated={refetch}
       />
-
-      {/* Role Change Confirmation */}
-      <ConfirmDialog
-        open={pendingRole !== null}
-        onClose={() => setPendingRole(null)}
-        onConfirm={handleRoleConfirm}
-        loading={roleChanging}
-        title="Change Role"
-        message={`Change "${pendingRole?.employee.displayName}"'s role to "${pendingRole?.role}"? This takes effect immediately.`}
-      />
-    </>
+    </> 
   );
 }
 

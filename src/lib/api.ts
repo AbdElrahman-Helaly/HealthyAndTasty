@@ -401,21 +401,15 @@ function sanitizeBranchEmployee(raw: unknown): BranchEmployee | null {
     id: id || employeeCode,
     branchId: typeof r.branchId === 'string' ? r.branchId : '',
     employeeCode,
-    displayName:
-      typeof r.displayName === 'string'
+    employeeName:
+      typeof r.employeeName === 'string'
+        ? r.employeeName
+        : typeof r.displayName === 'string'
         ? r.displayName
         : typeof r.name === 'string'
         ? r.name
         : '',
-    roleName:
-      typeof r.roleName === 'string'
-        ? r.roleName
-        : typeof r.role === 'string'
-        ? r.role
-        : 'Employee',
-    isActive: typeof r.isActive === 'boolean' ? r.isActive : true,
-    createdAt:
-      typeof r.createdAt === 'string' ? r.createdAt : new Date().toISOString(),
+    branchName: typeof r.branchName === 'string' ? r.branchName : '',
   };
 }
 
@@ -845,7 +839,7 @@ export const api = {
           : [];
         return {
           items: sanitizeArray(items, sanitizeBranchEmployee),
-          total: typeof r.total === 'number' ? r.total : items.length,
+          total: typeof r.total === 'number' ? r.total : typeof r.totalCount === 'number' ? r.totalCount : items.length,
           page: typeof r.page === 'number' ? r.page : params.page ?? 1,
           pageSize: typeof r.pageSize === 'number' ? r.pageSize : params.pageSize ?? 20,
         };
