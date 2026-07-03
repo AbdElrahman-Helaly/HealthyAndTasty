@@ -152,24 +152,6 @@ export function LoginPage() {
               </button>
             </div>
           </form>
-
-          {/* Scrolling ticker */}
-          <div className="mt-8 overflow-hidden border-t border-purple-100/40 pt-5">
-            <div className="relative w-full overflow-hidden">
-              <div className="animate-marquee whitespace-nowrap">
-                <span className="mx-4 text-sm text-purple-400/70 font-medium">
-                  {isRtl
-                    ? 'هيلثي اند تيستي هي علامة تجارية رائدة تقدم بدائل صحية لآلاف العملاء في الدول العربية'
-                    : 'Healthy & Tasty is a leading brand providing healthy alternatives to thousands of customers across the Arab world'}
-                </span>
-                <span className="mx-4 text-sm text-purple-400/70 font-medium">
-                  {isRtl
-                    ? 'هيلثي اند تيستي هي علامة تجارية رائدة تقدم بدائل صحية لآلاف العملاء في الدول العربية'
-                    : 'Healthy & Tasty is a leading brand providing healthy alternatives to thousands of customers across the Arab world'}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </motion.div>
     </AuthLayout>

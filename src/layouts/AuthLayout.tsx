@@ -149,8 +149,27 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-4 lg:p-12 relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-12 relative">
         <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-purple-300/15 blur-[120px] pointer-events-none" />
+
+        {/* Scrolling ticker above card */}
+        <div className="relative z-10 w-full max-w-sm xl:max-w-md mb-4 overflow-hidden rounded-2xl bg-white/60 backdrop-blur-sm border border-purple-100/40 px-5 py-3 shadow-sm">
+          <div className="overflow-hidden">
+            <div className="animate-marquee whitespace-nowrap">
+              <span className="mx-4 text-sm font-semibold text-[#5B34A7]">
+                {isRtl
+                  ? '⭐ هيلثي اند تيستي — علامة تجارية رائدة تقدم بدائل صحية لآلاف العملاء في الدول العربية'
+                  : '⭐ Healthy & Tasty — A leading brand providing healthy alternatives to thousands across the Arab world'}
+              </span>
+              <span className="mx-4 text-sm font-semibold text-[#5B34A7]">
+                {isRtl
+                  ? '⭐ هيلثي اند تيستي — علامة تجارية رائدة تقدم بدائل صحية لآلاف العملاء في الدول العربية'
+                  : '⭐ Healthy & Tasty — A leading brand providing healthy alternatives to thousands across the Arab world'}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <main className="relative z-10 w-full max-w-sm xl:max-w-md">
           {children}
         </main>
