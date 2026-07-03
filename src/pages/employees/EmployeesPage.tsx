@@ -72,6 +72,10 @@ function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
       setError('يرجى اختيار الفرع');
       return;
     }
+    if (!/[a-z]/.test(form.password)) {
+      setError('كلمة المرور يجب أن تحتوي على حرف إنجليزي صغير واحد على الأقل');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
