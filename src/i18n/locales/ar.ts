@@ -39,7 +39,7 @@ export const ar: TranslationKeys = {
     resultsCount: '{{count}} نتيجة',
   },
   auth: {
-    loginTitle: 'تسجيل دخول المشرف',
+    loginTitle: 'تسجيل الدخول',
     loginSubtitle: 'سجل الدخول لإدارة منصة Healthy & Tasty',
     employeeCode: 'كود الموظف',
     password: 'كلمة المرور',
