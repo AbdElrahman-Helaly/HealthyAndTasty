@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Pencil, Trash2, RefreshCw, Plus } from 'lucide-react';
+import { Eye, Pencil, Trash2, RefreshCw, Plus, Filter } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { FormDrawer } from '@/components/shared/FormDrawer';
@@ -11,12 +11,12 @@ import { LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useEmployeeDetails, useEmployees, useRoles } from '@/hooks/useEmployeeDetails';
 import { useBranches } from '@/hooks/useBranchDetails';
+import { useCountry } from '@/context/CountryContext';
 import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
 import { createBranchEmployee } from '@/services/branch.service';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useCountry } from '@/context/CountryContext';
-import { formatDate } from '@/lib/utils';
 import type { BranchEmployee, EmployeeUpdateRequest } from '@/types';
+import { formatDate } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Skeleton row component for loading state
@@ -403,8 +403,11 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export function EmployeesPage() {
   const { t } = useTranslation();
   usePageTitle(t('employees.title'));
+  const { selectedCountry } = useCountry();
+  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
+  const [branchFilter, setBranchFilter] = useState('');
 
-  const { items, isLoading, isFetchingMore, error, refetch, loadMore, hasMore } = useEmployees();
+  const { items, isLoading, isFetchingMore, error, refetch, loadMore, hasMore } = useEmployees(branchFilter || undefined);
 
   // Drawer state
   const [createOpen, setCreateOpen] = useState(false);
@@ -491,10 +494,28 @@ export function EmployeesPage() {
         title={t('employees.title')}
         subtitle={t('employees.subtitle')}
         actions={
-          <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            إضافة موظف
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Filter className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                value={branchFilter}
+                onChange={(e) => setBranchFilter(e.target.value)}
+                disabled={branchesLoading}
+                className="h-[40px] rounded-xl border border-[#DDD6FE] bg-[#F9FAFF] ps-3 pe-9 text-sm text-gray-700 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
+              >
+                <option value="">كل الفروع</option>
+                {(branches ?? []).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              إضافة موظف
+            </Button>
+          </div>
         }
       />
 

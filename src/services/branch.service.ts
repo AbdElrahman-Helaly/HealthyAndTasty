@@ -53,8 +53,8 @@ export async function getBranchEmployees(params: {
 /**
  * Fetch all branch employees (page-based pagination).
  */
-export async function getAllBranchEmployees(page = 1, pageSize = 20): Promise<PaginatedResponse<BranchEmployee>> {
-  return api.branchEmployees.list({ page, pageSize });
+export async function getAllBranchEmployees(page = 1, pageSize = 20, branchId?: string): Promise<PaginatedResponse<BranchEmployee>> {
+  return api.branchEmployees.list({ page, pageSize, branchId });
 }
 
 export async function createBranchEmployee(

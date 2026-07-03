@@ -26,7 +26,7 @@ interface UseEmployeesState {
 
 const PAGE_SIZE = 20;
 
-export function useEmployees(): UseEmployeesState {
+export function useEmployees(branchId?: string): UseEmployeesState {
   const [items, setItems] = useState<BranchEmployee[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -43,6 +43,13 @@ export function useEmployees(): UseEmployeesState {
     };
   }, []);
 
+  // Reset and refetch when branchId changes
+  useEffect(() => {
+    setItems([]);
+    setTotalCount(0);
+    setPage(1);
+  }, [branchId]);
+
   // Initial / refetch load
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +57,7 @@ export function useEmployees(): UseEmployeesState {
     setIsLoading(true);
     setError(null);
 
-    getAllBranchEmployees(1, PAGE_SIZE)
+    getAllBranchEmployees(1, PAGE_SIZE, branchId)
       .then((pageResult: PaginatedResponse<BranchEmployee>) => {
         if (cancelled || !mounted.current) return;
         setItems(pageResult.items);
@@ -67,7 +74,7 @@ export function useEmployees(): UseEmployeesState {
     return () => {
       cancelled = true;
     };
-  }, [tick]);
+  }, [tick, branchId]);
 
   const refetch = useCallback(() => {
     setItems([]);
@@ -81,7 +88,7 @@ export function useEmployees(): UseEmployeesState {
     setIsFetchingMore(true);
 
     const nextPage = page + 1;
-    getAllBranchEmployees(nextPage, PAGE_SIZE)
+    getAllBranchEmployees(nextPage, PAGE_SIZE, branchId)
       .then((pageResult: PaginatedResponse<BranchEmployee>) => {
         if (!mounted.current) return;
         setItems((prev) => [...prev, ...pageResult.items]);
@@ -94,7 +101,7 @@ export function useEmployees(): UseEmployeesState {
         setError(err instanceof Error ? err : new Error(String(err)));
         setIsFetchingMore(false);
       });
-  }, [page, isFetchingMore]);
+  }, [page, isFetchingMore, branchId]);
 
   return {
     items,
