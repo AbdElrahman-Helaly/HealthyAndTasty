@@ -6,8 +6,6 @@ import {
   Trash2,
   Package,
   UploadCloud,
-  ChevronDown,
-  ChevronUp,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -286,15 +284,16 @@ function ProductFormDrawer({
 }
 
 // ---------------------------------------------------------------------------
-// Import section (collapsible)
+// Import drawer
 // ---------------------------------------------------------------------------
-interface ImportSectionProps {
+interface ImportDrawerProps {
+  open: boolean;
+  onClose: () => void;
   showToast: (msg: string, variant?: 'success' | 'error' | 'info') => void;
 }
 
-function ImportSection({ showToast }: ImportSectionProps) {
+function ImportDrawer({ open, onClose, showToast }: ImportDrawerProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -352,63 +351,51 @@ function ImportSection({ showToast }: ImportSectionProps) {
   ];
 
   return (
-    <Card padding="none" className="mt-5">
-      {/* Collapsible header */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-start"
-      >
-        <div className="flex items-center gap-2">
-          <UploadCloud className="h-5 w-5 text-primary" />
-          <span className="text-sm font-semibold text-on-surface">{t('products.importSection')}</span>
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title={t('products.importSection')}
+      footer={
+        <div className="flex gap-1.5">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <Button
+            variant="secondary"
+            loading={importing}
+            onClick={() => fileRef.current?.click()}
+            className="gap-2"
+          >
+            <UploadCloud className="h-4 w-4" />
+            {t('products.importExcel')}
+          </Button>
         </div>
-        {open ? <ChevronUp className="h-4 w-4 text-on-surface-variant" /> : <ChevronDown className="h-4 w-4 text-on-surface-variant" />}
-      </button>
-
-      {open && (
-        <div className="border-t border-outline-variant/40 px-5 pb-5 pt-4 space-y-5">
-          {/* Import button */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="secondary"
-              loading={importing}
-              onClick={() => fileRef.current?.click()}
-              className="gap-2"
-            >
-              <UploadCloud className="h-4 w-4" />
-              {t('products.importExcel')}
-            </Button>
-            <p className="text-xs text-on-surface-variant">.xlsx {t('common.all')}</p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx"
-              onChange={handleFileChange}
-              className="hidden"
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="mb-3 text-sm font-semibold text-on-surface">{t('products.importHistory')}</p>
+          {loadingHistory ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <LoadingSkeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              columns={importColumns}
+              data={history}
+              keyExtractor={(r) => r.id}
+              emptyMessage="لا يوجد سجل استيراد بعد"
             />
-          </div>
-
-          {/* History table */}
-          <div>
-            <p className="mb-3 text-sm font-semibold text-on-surface">{t('products.importHistory')}</p>
-            {loadingHistory ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <LoadingSkeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : (
-              <DataTable
-                columns={importColumns}
-                data={history}
-                keyExtractor={(r) => r.id}
-                emptyMessage="لا يوجد سجل استيراد بعد"
-              />
-            )}
-          </div>
+          )}
         </div>
-      )}
-    </Card>
+      </div>
+    </FormDrawer>
   );
 }
 
@@ -483,6 +470,7 @@ export function ProductsPage() {
   // Form state
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const openCreate = useCallback(() => {
     setEditTarget(null);
@@ -611,10 +599,20 @@ export function ProductsPage() {
         title={t('products.title')}
         subtitle={t('products.subtitle')}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            {t('products.addProduct')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {t('products.importExcel')}
+            </Button>
+            <Button onClick={openCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t('products.addProduct')}
+            </Button>
+          </div>
         }
       />
 
@@ -749,8 +747,12 @@ export function ProductsPage() {
         )}
       </Card>
 
-      {/* Import section */}
-      <ImportSection showToast={showToast} />
+      {/* Import drawer */}
+      <ImportDrawer
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        showToast={showToast}
+      />
 
       {/* Product form */}
       <ProductFormDrawer
