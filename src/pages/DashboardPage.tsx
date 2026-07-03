@@ -1,18 +1,16 @@
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { Suspense, lazy } from 'react';
 import {
   Globe, Building2, Users, Package, TrendingUp, DollarSign,
   ShoppingCart, Activity, UserPlus, RefreshCw, Trash2, CheckCircle2,
   Clock, MapPin, Calendar,
 } from 'lucide-react';
-import Chart from 'react-apexcharts';
 import CountUp from 'react-countup';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { useDashboardKpis } from '@/hooks/useDashboardKpis';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { ApexOptions } from 'apexcharts';
 
 const COLORS = {
   primary: '#6D4CFF',
@@ -21,55 +19,28 @@ const COLORS = {
   green: '#22C55E',
   orange: '#F59E0B',
   red: '#EF4444',
-  background: '#F8F9FF',
 };
 
-function areaChartOptions(color: string): ApexOptions {
-  return {
-    chart: {
-      type: 'area',
-      toolbar: { show: false },
-      sparkline: { enabled: false },
-      fontFamily: 'inherit',
-    },
-    colors: [color],
-    dataLabels: { enabled: false },
-    stroke: { curve: 'smooth', width: 3 },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.45,
-        opacityTo: 0.05,
-        stops: [0, 100],
-      },
-    },
-    markers: { size: 0 },
-    tooltip: {
-      enabled: true,
-      theme: 'dark',
-      x: { show: true },
-      marker: { show: false },
-    },
-    grid: { show: false },
-    yaxis: { show: false },
-    xaxis: {
-      type: 'category',
-      labels: { show: false },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-    },
-  };
+const Chart: any = lazy(() =>
+  import('react-apexcharts').then((m: any) => ({ default: m.default || m }))
+);
+
+function ApexChart({ options, series, type, height }: any) {
+  return (
+    <Suspense fallback={<div className="h-full skeleton rounded-2xl" />}>
+      <Chart options={options} series={series} type={type} height={height} />
+    </Suspense>
+  );
 }
 
-function genMonthlyRevenue(): { categories: string[]; data: number[] } {
+function genMonthlyRevenue() {
   return {
     categories: ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
     data: [85, 120, 95, 140, 130, 160, 145, 180, 155, 170, 190, 210],
   };
 }
 
-function genRevenueArea(): { categories: string[]; data: number[] } {
+function genRevenueArea() {
   return {
     categories: ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4', 'الأسبوع 5', 'الأسبوع 6', 'الأسبوع 7', 'الأسبوع 8'],
     data: [45, 52, 38, 65, 58, 72, 68, 85],
@@ -95,36 +66,21 @@ function genActivityTimeline() {
   ];
 }
 
-const fadeUpVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.5, ease: 'easeOut' as const },
-  }),
-} as any;
-
 function StatCardAnimated({
-  label,
-  value,
-  prefix = '',
-  suffix = '',
-  icon: Icon,
-  iconColor,
-  trend,
-  decimals = 0,
-  delay = 0,
+  label, value, prefix = '', suffix = '',
+  icon: Icon, iconColor, trend, decimals = 0, delay = 0,
 }: {
-  label: string;
-  value: number;
-  prefix?: string;
-  suffix?: string;
-  icon: any;
-  iconColor: string;
+  label: string; value: number; prefix?: string; suffix?: string;
+  icon: any; iconColor: string;
   trend?: { direction: 'up' | 'down'; value: string };
-  decimals?: number;
-  delay?: number;
+  decimals?: number; delay?: number;
 }) {
   return (
-    <motion.div variants={fadeUpVariants} initial="hidden" animate="visible" custom={delay}>
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: delay * 0.08, duration: 0.5, ease: 'easeOut' }}
+    >
       <Card padding="md" hover className="relative overflow-hidden">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
@@ -160,49 +116,54 @@ export function DashboardPage() {
   const { t } = useTranslation();
   const { data: kpis, isLoading } = useDashboardKpis();
   usePageTitle(t('dashboard.title'));
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
   const rev = genRevenueArea();
   const monthly = genMonthlyRevenue();
   const heatmap = genHeatmapData();
   const activities = genActivityTimeline();
 
-  const revenueChart: ApexOptions = {
-    ...areaChartOptions(COLORS.primary),
-    chart: { ...areaChartOptions(COLORS.primary).chart, dropShadow: { enabled: true, top: 0, left: 0, blur: 12, color: COLORS.primary, opacity: 0.3 } },
+  const areaOpts = {
+    chart: {
+      type: 'area', toolbar: { show: false },
+      fontFamily: 'inherit',
+      dropShadow: { enabled: true, top: 0, left: 0, blur: 12, color: COLORS.primary, opacity: 0.3 },
+    },
+    colors: [COLORS.primary],
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 3 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 100] },
+    },
+    markers: { size: 0 },
+    tooltip: { enabled: true, theme: 'dark' },
+    grid: { show: false },
+    yaxis: { show: false },
+    xaxis: { type: 'category', labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
   };
 
-  const donutEmployees: ApexOptions = {
+  const donutOpts = (color: string) => ({
     chart: { type: 'donut', fontFamily: 'inherit' },
-    colors: [COLORS.green, '#E8F5E9'],
+    colors: [color, '#EDE9FE'],
     labels: ['نشط', 'غير نشط'],
     dataLabels: { enabled: false },
     plotOptions: {
       pie: {
-        donut: { size: '75%', labels: { show: true, name: { show: true, fontSize: '13px' }, value: { show: true, fontSize: '22px', fontWeight: 700, color: '#0f172a' }, total: { show: true, fontSize: '13px', label: 'نسبة النشاط', formatter: () => '78%' } } },
+        donut: {
+          size: '75%',
+          labels: {
+            show: true,
+            name: { show: true, fontSize: '13px' },
+            value: { show: true, fontSize: '22px', fontWeight: 700, color: '#0f172a' },
+            total: { show: true, fontSize: '13px', label: 'نسبة النشاط', formatter: () => '' },
+          },
+        },
       },
     },
     legend: { show: false },
     stroke: { width: 0 },
-    tooltip: { enabled: false },
-  };
+  });
 
-  const donutProducts: ApexOptions = {
-    chart: { type: 'donut', fontFamily: 'inherit' },
-    colors: [COLORS.primary, '#EDE9FE'],
-    labels: ['نشط', 'غير نشط'],
-    dataLabels: { enabled: false },
-    plotOptions: {
-      pie: {
-        donut: { size: '75%', labels: { show: true, name: { show: true, fontSize: '13px' }, value: { show: true, fontSize: '22px', fontWeight: 700, color: '#0f172a' }, total: { show: true, fontSize: '13px', label: 'نسبة النشاط', formatter: () => '65%' } } },
-      },
-    },
-    legend: { show: false },
-    stroke: { width: 0 },
-    tooltip: { enabled: false },
-  };
-
-  const barMonthly: ApexOptions = {
+  const barOpts = {
     chart: { type: 'bar', fontFamily: 'inherit', toolbar: { show: false } },
     colors: [COLORS.primary, COLORS.secondary, COLORS.blue, COLORS.green, COLORS.orange, COLORS.red, COLORS.primary, COLORS.secondary, COLORS.blue, COLORS.green, COLORS.orange, COLORS.red],
     plotOptions: { bar: { borderRadius: 6, columnWidth: '60%', distributed: true } },
@@ -213,13 +174,24 @@ export function DashboardPage() {
     tooltip: { theme: 'dark' },
   };
 
-  const heatmapOpts: ApexOptions = {
+  const heatOpts = {
     chart: { type: 'heatmap', fontFamily: 'inherit', toolbar: { show: false } },
     colors: [COLORS.primary],
     dataLabels: { enabled: false },
     xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
     grid: { show: false },
-    plotOptions: { heatmap: { shadeIntensity: 0.5, radius: 4, enableShades: true, colorScale: { ranges: [{ from: 0, to: 1, color: '#EDE9FE' }, { from: 2, to: 3, color: '#A78BFA' }, { from: 4, to: 5, color: '#6D4CFF' }] } } },
+    plotOptions: {
+      heatmap: {
+        shadeIntensity: 0.5, radius: 4, enableShades: true,
+        colorScale: {
+          ranges: [
+            { from: 0, to: 1, color: '#EDE9FE' },
+            { from: 2, to: 3, color: '#A78BFA' },
+            { from: 4, to: 5, color: '#6D4CFF' },
+          ],
+        },
+      },
+    },
   };
 
   if (isLoading) {
@@ -252,8 +224,6 @@ export function DashboardPage() {
     );
   }
 
-  if (!mounted) return null;
-
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="نظرة عامة" subtitle="لوحة التحكم الرئيسية للمنصة" />
@@ -268,8 +238,12 @@ export function DashboardPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue Area Chart */}
-        <motion.div className="lg:col-span-2" variants={fadeUpVariants} initial="hidden" animate="visible" custom={4}>
+        <motion.div
+          className="lg:col-span-2"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -283,14 +257,17 @@ export function DashboardPage() {
                 </span>
               </div>
             </div>
-            {mounted && (
-              <Chart options={revenueChart} series={[{ name: 'الإيرادات', data: rev.data }]} type="area" height={280} />
-            )}
+            <ApexChart options={areaOpts} series={[{ name: 'الإيرادات', data: rev.data }]} type="area" height={280} />
           </Card>
         </motion.div>
 
         {/* Donut Charts */}
-        <motion.div className="flex flex-col gap-4" variants={fadeUpVariants} initial="hidden" animate="visible" custom={5}>
+        <motion.div
+          className="flex flex-col gap-4"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-green-500" />
@@ -298,7 +275,7 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="w-32 h-32 shrink-0">
-                {mounted && <Chart options={donutEmployees} series={[78, 22]} type="donut" height={128} />}
+                <ApexChart options={donutOpts(COLORS.green)} series={[78, 22]} type="donut" height={128} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2 text-sm">
@@ -335,7 +312,7 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="w-32 h-32 shrink-0">
-                {mounted && <Chart options={donutProducts} series={[65, 35]} type="donut" height={128} />}
+                <ApexChart options={donutOpts(COLORS.primary)} series={[65, 35]} type="donut" height={128} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2 text-sm">
@@ -369,8 +346,12 @@ export function DashboardPage() {
 
       {/* Bar + Heatmap Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Monthly Revenue Bar */}
-        <motion.div className="lg:col-span-2" variants={fadeUpVariants} initial="hidden" animate="visible" custom={6}>
+        <motion.div
+          className="lg:col-span-2"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.48, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -382,22 +363,22 @@ export function DashboardPage() {
                 2024
               </div>
             </div>
-            {mounted && (
-              <Chart options={barMonthly} series={[{ name: 'الإيرادات', data: monthly.data }]} type="bar" height={200} />
-            )}
+            <ApexChart options={barOpts} series={[{ name: 'الإيرادات', data: monthly.data }]} type="bar" height={200} />
           </Card>
         </motion.div>
 
         {/* Weekly Activity Heatmap */}
-        <motion.div variants={fadeUpVariants} initial="hidden" animate="visible" custom={7}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.56, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="overflow-hidden">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold text-on-surface">النشاط الأسبوعي</h3>
             </div>
-            {mounted && (
-              <Chart options={heatmapOpts} series={heatmap} type="heatmap" height={210} />
-            )}
+            <ApexChart options={heatOpts} series={heatmap} type="heatmap" height={210} />
           </Card>
         </motion.div>
       </div>
@@ -405,7 +386,11 @@ export function DashboardPage() {
       {/* Activity + Latest */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Activity Timeline */}
-        <motion.div variants={fadeUpVariants} initial="hidden" animate="visible" custom={8}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.64, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-on-surface">آخر النشاطات</h3>
@@ -441,7 +426,11 @@ export function DashboardPage() {
         </motion.div>
 
         {/* Latest Employees */}
-        <motion.div variants={fadeUpVariants} initial="hidden" animate="visible" custom={9}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.72, duration: 0.5, ease: 'easeOut' }}
+        >
           <Card padding="lg" className="overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-on-surface">أحدث الموظفين</h3>
