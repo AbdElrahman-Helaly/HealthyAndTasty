@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'h-12 w-full rounded-xl border bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200',
               'focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500',
-              icon && 'ps-10',
+              icon ? 'ps-10' : '',
               error
                 ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500'
                 : 'border-gray-200 hover:border-gray-300',

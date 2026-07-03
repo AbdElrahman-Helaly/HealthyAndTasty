@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Package, Truck, ChefHat, Leaf, Store } from 'lucide-react';
+import { ShoppingCart, Package, Truck, ChefHat, Store } from 'lucide-react';
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
