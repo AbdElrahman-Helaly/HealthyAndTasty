@@ -1,30 +1,37 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   type ReactNode,
 } from 'react';
-import { usePermissions } from '@/hooks/usePermissions';
-import type { Permissions } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface PermissionContextValue {
-  permissions: Permissions | null;
-  isLoading: boolean;
-  hasPermission: (key: keyof Permissions) => boolean;
+  /** Exact permission name strings granted to the current user (from Login/Me) */
+  permissions: string[];
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (...permissions: string[]) => boolean;
 }
 
 const PermissionContext = createContext<PermissionContextValue | null>(null);
 
 export function PermissionProvider({ children }: { children: ReactNode }) {
-  const { data: permissions, isLoading } = usePermissions();
+  const { permissions } = useAuth();
+
+  const hasPermission = useCallback(
+    (permission: string) => permissions.includes(permission),
+    [permissions],
+  );
+
+  const hasAnyPermission = useCallback(
+    (...names: string[]) => names.some((name) => permissions.includes(name)),
+    [permissions],
+  );
 
   const value = useMemo(
-    () => ({
-      permissions,
-      isLoading,
-      hasPermission: (key: keyof Permissions) => permissions?.[key] ?? false,
-    }),
-    [permissions, isLoading],
+    () => ({ permissions, hasPermission, hasAnyPermission }),
+    [permissions, hasPermission, hasAnyPermission],
   );
 
   return (

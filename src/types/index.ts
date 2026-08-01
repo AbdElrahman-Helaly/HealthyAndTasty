@@ -1,357 +1,461 @@
-export interface Permissions {
-  canManageBranches: boolean;
-  canManageEmployees: boolean;
-  canManageProducts: boolean;
-  canManageCategories: boolean;
-  canSendNotifications: boolean;
-  canViewAuditLogs: boolean;
-  canManageCountries: boolean;
+// ---------------------------------------------------------------------------
+// API envelope — every endpoint returns { success, message, data, errors, statusCode }
+// ---------------------------------------------------------------------------
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  errors: string[];
+  statusCode: number;
 }
 
-export type PermissionKey = keyof Permissions;
-
-export interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: Permissions;
+/** Paged response shape used by list endpoints */
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
-export interface AuthUser {
-  id: string;
-  /** userId from the API response */
-  userId: string;
-  displayName: string;
-  employeeCode: string;
-  branchId: string;
-  roles: string[];
-  /** Convenience: first role string, or 'Employee' */
-  roleName: string;
+export interface ApiErrorPayload {
+  message?: string;
+  error?: string;
+  status?: number;
+  errors?: string[];
 }
 
-export interface LoginCredentials {
-  employeeCode: string;
+// ---------------------------------------------------------------------------
+// Dashboard Identity — auth
+// ---------------------------------------------------------------------------
+
+export interface DashboardLoginRequest {
+  emailOrPhone: string;
   password: string;
-}
-
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthUser;
 }
 
 export interface RefreshTokenRequest {
-  userId: string;
   refreshToken: string;
 }
 
-export interface RefreshTokenResponse {
+export interface LogoutRequest {
+  refreshToken: string;
+}
+
+export interface CurrentEmployee {
+  id: number;
+  firstName: string;
+  lastName: string;
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+  roleId: number;
+  isActive: boolean;
+}
+
+export interface BranchAssignment {
+  branchId: string;
+  odooBranchId: number;
+  name: string;
+}
+
+export interface DashboardRole {
+  id: number;
+  name: string;
+  displayName: string;
+}
+
+export interface PermissionDto {
+  id: number;
+  name: string;
+  displayName: string;
+  module: string;
+}
+
+/** Login / refresh / me response — permissions is a list of permission name strings */
+export interface DashboardAuthResponse {
   accessToken: string;
   refreshToken: string;
+  expiresIn: number;
+  user: CurrentEmployee;
+  assignedBranches: BranchAssignment[];
+  role: DashboardRole;
+  permissions: string[];
 }
 
-export interface Country {
-  id: string;
-  code: string;
+/** Normalised user persisted on the frontend */
+export interface AuthUser {
+  id: number;
+  firstName: string;
+  lastName: string;
   name: string;
-  nameAr: string;
+  phone: string;
+  email: string;
+  role: string;
+  roleId: number;
   isActive: boolean;
-  branchCount?: number;
-  employeeCount?: number;
-  productCount?: number;
+  permissions: string[];
+  assignedBranches: BranchAssignment[];
 }
 
-export interface CountryStats {
-  branchCount: number;
-  activeBranches: number;
-  employeeCount: number;
-  productCount: number;
-  importsThisMonth: number;
-}
+// ---------------------------------------------------------------------------
+// Employees
+// ---------------------------------------------------------------------------
 
-export interface CountryDetails extends Country {
-  stats: CountryStats;
-  currency: string;
-  timezone: string;
-}
-
-export interface Category {
-  id: string;
+export interface Employee {
+  id: number;
+  firstName: string;
+  lastName: string;
   name: string;
-  nameAr: string;
-  parentId: string | null;
+  phone: string;
+  email: string;
+  role: string;
+  roleId: number;
   isActive: boolean;
-  productCount: number;
+  isProfileCompleted: boolean;
+  branchIds: string[];
+  branchNames: string[];
   createdAt: string;
-  updatedAt: string;
 }
 
-export interface CreateCategoryInput {
+/** Create response adds temporaryPassword (shown exactly once) */
+export interface EmployeeDetail extends Employee {
+  temporaryPassword?: string | null;
+}
+
+export interface CreateEmployeeRequest {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string | null;
+  roleId: number;
+  branchIds: string[];
+}
+
+export interface UpdateEmployeeRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  email?: string | null;
+}
+
+export interface AssignBranchesRequest {
+  branchIds: string[];
+}
+
+export interface AssignRoleRequest {
+  roleId: number;
+}
+
+// ---------------------------------------------------------------------------
+// Roles & Permissions
+// ---------------------------------------------------------------------------
+
+export interface RoleDto {
+  id: number;
   name: string;
-  nameAr: string;
-  parentId: string | null;
-  isActive: boolean;
+  displayName: string;
 }
 
-export interface UpdateCategoryInput extends CreateCategoryInput {
-  id: string;
+export interface SetRolePermissionsRequest {
+  permissionIds: number[];
 }
 
-export interface Branch {
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+export const ORDER_STATUS = {
+  Pending: 1,
+  Confirmed: 2,
+  FailedToSync: 3,
+  Cancelled: 4,
+  Completed: 5,
+  Preparing: 6,
+  ReadyForDelivery: 7,
+  OutForDelivery: 8,
+  Delivered: 9,
+  Rejected: 10,
+} as const;
+
+export type OrderStatusNumber =
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10;
+
+export const ORDER_STATUS_LABELS: Record<OrderStatusNumber, string> = {
+  1: 'Pending',
+  2: 'Confirmed',
+  3: 'FailedToSync',
+  4: 'Cancelled',
+  5: 'Completed',
+  6: 'Preparing',
+  7: 'ReadyForDelivery',
+  8: 'OutForDelivery',
+  9: 'Delivered',
+  10: 'Rejected',
+};
+
+export interface DashboardOrderListItem {
+  id: number;
+  orderNumber: string;
+  odooOrderId: number;
+  customerName: string;
+  customerPhone: string;
+  branchId: number;
+  branchName: string;
+  paymentMethod: string;
+  subtotal: number;
+  discount: number;
+  deliveryFee: number;
+  total: number;
+  status: string;
+  statusNumber: OrderStatusNumber;
+  itemsCount: number;
+  createdAt: string;
+}
+
+export interface DashboardOrderItem {
+  productId: number;
+  productName: string;
+  image: string;
+  unitPrice: number;
+  priceAfterDiscount: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+export interface OrderStatusHistory {
+  fromStatus: string;
+  toStatus: string;
+  note: string;
+  changedByRole: string;
+  createdAt: string;
+}
+
+export interface DashboardOrderDetail extends DashboardOrderListItem {
+  deliveryAddress: string;
+  addressLatitude: number;
+  addressLongitude: number;
+  couponCode: string;
+  items: DashboardOrderItem[];
+  history: OrderStatusHistory[];
+  availableStatuses: OrderStatusNumber[];
+}
+
+export interface UpdateOrderStatusRequest {
+  newStatus: OrderStatusNumber;
+  note?: string;
+}
+
+export interface LiveOrdersColumn {
+  statusNumber: OrderStatusNumber;
+  status: string;
+  orders: DashboardOrderListItem[];
+}
+
+export interface LiveOrdersBoard {
+  columns: LiveOrdersColumn[];
+}
+
+export interface OrderStatusChangedEvent {
+  order: DashboardOrderListItem;
+  oldStatusNumber: OrderStatusNumber;
+  newStatusNumber: OrderStatusNumber;
+}
+
+export interface OrderListParams {
+  status?: OrderStatusNumber;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Branches (admin)
+// ---------------------------------------------------------------------------
+
+export interface BranchAdmin {
   id: string;
-  code: string;
+  odooBranchId: number;
   name: string;
-  countryId: string;
-  countryCode: string;
-  countryName: string;
+  address: string;
   latitude: number;
   longitude: number;
+  deliveryRadiusKm: number;
   isActive: boolean;
-  employeeCount?: number;
-}
-
-export interface CreateBranchRequest {
-  code: string;
-  name: string;
-  country: string;
-  latitude: number;
-  longitude: number;
+  createdAt: string;
 }
 
 export interface UpdateBranchRequest {
-  name: string;
-  latitude: number;
-  longitude: number;
-  isActive: boolean;
-}
-
-export interface BranchEmployee {
-  id: string;
-  branchId: string;
-  employeeCode: string;
-  employeeName: string;
-  branchName: string;
-}
-
-export interface CreateBranchEmployeeRequest {
-  branchId: string;
-  employeeCode: string;
-  password: string;
-  displayName: string;
-}
-
-export interface ChangeEmployeeRoleRequest {
-  roleName: string;
-}
-
-export interface EmployeeRole {
-  name: string;
-}
-
-export interface BranchDetails extends Branch {
-  employees: EmployeeSummary[];
-  recentImports: ImportRecord[];
-  notifications: Notification[];
-  activity: ActivityItem[];
-}
-
-export interface EmployeeSummary {
-  id: string;
-  code: string;
-  displayName: string;
-  role: string;
-  isActive: boolean;
-  branchId: string;
-  branchName: string;
-}
-
-/** Shape returned by GET /api/employees (list) */
-export interface Employee {
-  id: string;
-  /** userId field from API */
-  userId: string;
-  firstName: string;
-  lastName: string;
-  /** Computed: `${firstName} ${lastName}` */
-  displayName: string;
-  email: string;
-  /** E.164 phone */
-  phoneE164: string;
-  employeeCode: string;
-  /** Branch UUID */
-  employeeBranchId: string;
-  createdAt: string;
-  role: string;
-}
-
-/** Shape returned by GET /api/employees/{id} */
-export interface EmployeeDetails extends Employee {
-  branch: Branch | null;
-}
-
-/** Body for PUT /api/employees/{id} */
-export interface EmployeeUpdateRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneE164: string;
-  employeeCode: string;
-  employeeBranchId: string;
-  password?: string;
-}
-
-/** Cursor-based paginated response */
-export interface CursorPagedResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-}
-
-/** Role string returned by GET /api/roles */
-export type ApiRole = string;
-
-export interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  nameAr?: string;
-  categoryId: string;
-  categoryName: string;
-  countryCode: string;
-  price: number;
-  currency: string;
-  isActive: boolean;
-  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
-  branchId?: string;
-  supplier?: string;
-  productId?: string;
-  description?: string;
-  stockQuantity?: number;
-}
-
-export interface ProductListParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  categoryId?: string;
-  parentCategoryId?: string;
-  branchId?: string;
-  isActive?: boolean;
-  supplier?: string;
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-export interface CategoryListParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
+  name?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  deliveryRadiusKm?: number;
   isActive?: boolean;
 }
 
-export interface CreateProductBody {
-  branchId: string;
-  sku: string;
-  name: string;
-  price: number;
-  currency: string;
-  isActive: boolean;
-  categoryId: string;
-  supplier?: string;
-  productId?: string;
-  description?: string;
-  stockQuantity?: number;
+// ---------------------------------------------------------------------------
+// Statistics
+// ---------------------------------------------------------------------------
+
+export interface StatusCount {
+  statusNumber: OrderStatusNumber;
+  status: string;
+  count: number;
 }
 
-export interface UpdateProductBody {
-  branchId: string;
-  name: string;
-  price: number;
-  currency: string;
-  isActive: boolean;
-  categoryId: string;
-  supplier?: string;
-  productId?: string;
-  description?: string;
-  stockQuantity?: number;
+export interface ProductPerformance {
+  productId: number;
+  productName: string;
+  quantity: number;
+  revenue: number;
 }
 
-export interface ImportHistoryRecord {
-  id: string;
-  userId: string;
-  userName: string;
-  branchId: string;
+export interface BranchRevenue {
+  branchId: number;
   branchName: string;
-  fileName: string;
-  createdCount: number;
-  updatedCount: number;
-  failedCount: number;
-  uploadedAtUtc: string;
+  revenue: number;
+  ordersCount: number;
 }
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  targetType: 'all' | 'country' | 'branch';
-  targetId?: string;
-  targetLabel?: string;
+export interface DashboardStatistics {
+  totalOrders: number;
+  todayOrders: number;
+  pendingOrders: number;
+  inProgressOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  rejectedOrders: number;
+  failedToSyncOrders: number;
+  totalRevenue: number;
+  todayRevenue: number;
+  averageOrderValue: number;
+  totalCustomers: number;
+  ordersByStatus: StatusCount[];
+  topProducts: ProductPerformance[];
+  revenueByBranch: BranchRevenue[];
+  generatedAt: string;
 }
 
-export interface SendNotificationInput {
-  title: string;
-  message: string;
-  targetType: 'all' | 'country' | 'branch';
-  targetId?: string;
+// ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+export interface DailySales {
+  date: string;
+  ordersCount: number;
+  revenue: number;
 }
 
-export interface DashboardKpis {
-  totalCountries: number;
-  totalBranches: number;
-  activeBranches: number;
-  totalEmployees: number;
-  activeEmployees: number;
-  totalProducts: number;
-  importsToday: number;
-  importsThisWeek: number;
-  importsThisMonth: number;
-  failedImports: number;
-}
-
-export interface ImportRecord {
-  id: string;
-  fileName: string;
-  branchId: string;
-  branchName: string;
-  employeeId: string;
-  employeeName: string;
-  status: 'success' | 'failed' | 'partial';
-  productsImported: number;
-  createdAt: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  action: string;
-  description: string;
-  actor: string;
-  timestamp: string;
+export interface SalesReport {
+  from: string;
+  to: string;
+  totalOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  daily: DailySales[];
+  byBranch: BranchRevenue[];
 }
 
 export interface AuditLog {
-  id: string;
-  timestamp: string;
-  actor: string;
+  id: number;
+  userId: number | null;
+  userName: string | null;
   action: string;
   entity: string;
-  entityId: string;
-  ipAddress: string;
+  entityId: string | null;
+  oldValues: string | null;
+  newValues: string | null;
+  ipAddress: string | null;
+  device: string | null;
+  createdAt: string;
 }
+
+export interface AuditLogListParams {
+  entity?: string;
+  action?: string;
+  userId?: number;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (admin)
+// ---------------------------------------------------------------------------
+
+export type NotificationTarget = 'all' | 'role' | 'branch' | 'user';
+
+export interface NotificationListItem {
+  id: string;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  targetUrl: string | null;
+  target: string;
+  sentBy: number | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface SendNotificationRequest {
+  title: string;
+  body: string;
+  imageUrl?: string | null;
+  targetUrl?: string | null;
+  target: NotificationTarget;
+  role?: string | null;
+  branchId?: string | null;
+  userId?: number | null;
+}
+
+// ---------------------------------------------------------------------------
+// Users (admin)
+// ---------------------------------------------------------------------------
+
+export interface UserManagement {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+  verified: boolean;
+  isProfileCompleted: boolean;
+  branchNames: string[];
+  createdAt: string;
+}
+
+export interface UpdateUserRoleRequest {
+  userId: number;
+  role: string;
+}
+
+export interface AssignUserBranchRequest {
+  userId: number;
+  branchId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Search (global)
+// ---------------------------------------------------------------------------
 
 export interface SearchResultItem {
   id: string;
-  type: 'branch' | 'employee' | 'product' | 'category';
+  type: 'branch' | 'employee' | 'order';
   title: string;
   subtitle: string;
   href: string;
@@ -360,142 +464,5 @@ export interface SearchResultItem {
 export interface SearchResults {
   branches: SearchResultItem[];
   employees: SearchResultItem[];
-  products: SearchResultItem[];
-  categories: SearchResultItem[];
+  orders: SearchResultItem[];
 }
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
-export interface ApiErrorPayload {
-  message?: string;
-  error?: string;
-  status?: number;
-}
-
-// ---------------------------------------------------------------------------
-// Banner
-// ---------------------------------------------------------------------------
-
-export interface Banner {
-  id: string;
-  imageUrl: string;
-  categoryId: string;
-  productId: string;
-  actionType: number;
-  isActive: boolean;
-  sortOrder: number;
-  createdAtUtc: string;
-  updatedAtUtc: string | null;
-}
-
-export interface ActionTypeOption {
-  value: number;
-  name: string;
-}
-
-// ---------------------------------------------------------------------------
-// Address
-// ---------------------------------------------------------------------------
-
-export interface Address {
-  id: string;
-  label: string;
-  line1: string;
-  line2?: string | null;
-  city: string;
-  region: string;
-  country: string;
-  postalCode?: string | null;
-  phoneE164?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  isDefault?: boolean;
-}
-
-export interface CreateAddressRequest {
-  line1: string;
-  city: string;
-  region: string;
-  country: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  label: string;
-  line2?: string | null;
-  postalCode?: string | null;
-  phoneE164?: string | null;
-  setAsDefault?: boolean;
-}
-
-export interface UpdateAddressRequest {
-  line1: string;
-  city: string;
-  region: string;
-  country: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  label: string;
-  line2?: string | null;
-  postalCode?: string | null;
-  phoneE164?: string | null;
-}
-
-// ---------------------------------------------------------------------------
-// Discounts
-// ---------------------------------------------------------------------------
-
-export interface DiscountTypeOption {
-  value: number;
-  name: string; // "Percentage" | "FixedAmount" | "BuyXGetY" | "Bundle" | "FreeShipping" | "Tiered"
-}
-
-export interface DiscountTargetOption {
-  value: number;
-  name: string; // "AllProducts" | "SpecificProducts" | "SpecificCategories" | "OrderLevel"
-}
-
-export interface Discount {
-  id: string;
-  name: string;
-  couponCode: string | null;
-  type: DiscountTypeOption;
-  value: number;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  usageLimit: number;
-  usageCount: number;
-  perUserLimit: number;
-  minOrderAmount: number;
-  maxDiscountAmount: number;
-  target: DiscountTargetOption;
-  ruleConfigurationJson: string | null;
-  productIds: string[];
-  categoryIds: string[];
-}
-
-export interface CreateDiscountBody {
-  name: string;
-  type: number;
-  value: number;
-  target: number;
-  couponCode?: string;
-  startDate: string;
-  endDate: string;
-  usageLimit: number;
-  perUserLimit: number;
-  minOrderAmount: number;
-  maxDiscountAmount: number;
-  ruleConfigurationJson?: string;
-  productIds: string[];
-  categoryIds: string[];
-}
-
-export interface UpdateDiscountBody extends CreateDiscountBody {
-  isActive: boolean;
-}
-

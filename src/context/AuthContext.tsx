@@ -2,80 +2,158 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { api, storeTokens, clearAuthAndRedirect, TOKEN_KEY } from '@/lib/api';
-import type { AuthUser, LoginCredentials } from '@/types';
+import {
+  getStoredAuth,
+  storeAuth,
+  clearAuth,
+} from '@/lib/apiClient';
+import { login as loginRequest, me as meRequest, logout as logoutRequest } from '@/api/auth.api';
+import type { AuthUser, BranchAssignment, DashboardLoginRequest, DashboardRole } from '@/types';
 
 interface AuthContextValue {
   user: AuthUser | null;
+  role: DashboardRole | null;
+  permissions: string[];
+  assignedBranches: BranchAssignment[];
   isAuthenticated: boolean;
+  /** true while the initial session restore (/me) is in flight */
+  isRestoring: boolean;
+  /** login request in progress */
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
-  logout: () => void;
+  login: (credentials: DashboardLoginRequest) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  /** Re-fetch /me and refresh stored user/permissions */
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const USER_KEY = 'ht_superadmin_user';
-
-function loadStoredUser(): AuthUser | null {
-  const raw = localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AuthUser;
-  } catch {
-    return null;
-  }
+function restoreInitial(): {
+  user: AuthUser | null;
+  role: DashboardRole | null;
+  permissions: string[];
+  assignedBranches: BranchAssignment[];
+} {
+  const stored = getStoredAuth();
+  if (!stored) return { user: null, role: null, permissions: [], assignedBranches: [] };
+  return {
+    user: stored.user,
+    role: stored.role,
+    permissions: stored.permissions,
+    assignedBranches: stored.assignedBranches,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => loadStoredUser());
+  const initial = useState(restoreInitial)[0];
+  const [user, setUser] = useState<AuthUser | null>(initial.user);
+  const [role, setRole] = useState<DashboardRole | null>(initial.role);
+  const [permissions, setPermissions] = useState<string[]>(initial.permissions);
+  const [assignedBranches, setAssignedBranches] = useState<BranchAssignment[]>(
+    initial.assignedBranches,
+  );
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(() => Boolean(getStoredAuth()));
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
+  const applyAuth = useCallback((response: {
+    accessToken?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    user?: AuthUser;
+    role?: DashboardRole;
+    permissions?: string[];
+    assignedBranches?: BranchAssignment[];
+  }) => {
+    if (response.user) setUser(response.user);
+    if (response.role) setRole(response.role);
+    if (response.permissions) setPermissions(response.permissions);
+    if (response.assignedBranches) setAssignedBranches(response.assignedBranches);
+  }, []);
+
+  const login = useCallback(async (credentials: DashboardLoginRequest) => {
     setIsLoading(true);
     try {
-      const response = await api.auth.login(credentials);
-
-      // Persist tokens + expiry via the shared helper (keeps TOKEN_KEY consistent)
-      storeTokens(response.accessToken, response.refreshToken, response.user.userId);
-
-      // Persist full user object for session restore on page reload
-      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-
-      setUser(response.user);
-      return true;
-    } catch {
-      return false;
+      const response = await loginRequest(credentials);
+      const stored = storeAuth(response);
+      applyAuth({
+        user: stored.user,
+        role: stored.role,
+        permissions: stored.permissions,
+        assignedBranches: stored.assignedBranches,
+      });
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Login failed',
+      };
     } finally {
       setIsLoading(false);
     }
+  }, [applyAuth]);
+
+  const logout = useCallback(async () => {
+    const stored = getStoredAuth();
+    if (stored?.refreshToken) {
+      try {
+        await logoutRequest({ refreshToken: stored.refreshToken });
+      } catch {
+        // best effort — session is cleared regardless
+      }
+    }
+    clearAuth();
+    setUser(null);
+    setRole(null);
+    setPermissions([]);
+    setAssignedBranches([]);
   }, []);
 
-  const logout = useCallback(() => {
-    // Use the shared helper so all auth keys are cleared consistently
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('ht_superadmin_refresh_token');
-    localStorage.removeItem('ht_superadmin_user_id');
-    localStorage.removeItem('ht_superadmin_token_exp');
-    localStorage.removeItem(USER_KEY);
-    setUser(null);
-    // Don't call clearAuthAndRedirect here — the router handles the redirect
-    // when isAuthenticated becomes false (ProtectedRoute).
+  const refreshSession = useCallback(async () => {
+    try {
+      const response = await meRequest();
+      // /me carries no tokens — refresh only the profile part
+      const stored = storeAuth(response);
+      setUser(stored.user);
+      setRole(stored.role);
+      setPermissions(stored.permissions);
+      setAssignedBranches(stored.assignedBranches);
+    } catch {
+      // 401 already handled by the client (refresh → retry → logout)
+      setUser(null);
+      setRole(null);
+      setPermissions([]);
+      setAssignedBranches([]);
+    } finally {
+      setIsRestoring(false);
+    }
   }, []);
+
+  // Restore the session on mount — validates stored tokens via /me
+  useEffect(() => {
+    if (getStoredAuth()) {
+      void refreshSession();
+    }
+  }, [refreshSession]);
 
   const value = useMemo(
     () => ({
       user,
+      role,
+      permissions,
+      assignedBranches,
       isAuthenticated: user !== null,
+      isRestoring,
       isLoading,
       login,
       logout,
+      refreshSession,
     }),
-    [user, isLoading, login, logout],
+    [user, role, permissions, assignedBranches, isRestoring, isLoading, login, logout, refreshSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -87,7 +165,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-
-// Re-export for convenience so callers that need the raw redirect helper
-// don't have to import from api.ts directly
-export { clearAuthAndRedirect };

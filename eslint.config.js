@@ -18,5 +18,12 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Data fetching in effects (void load()) is the standard pattern here.
+      // The new react-hooks v7 rule flags it unconditionally.
+      'react-hooks/set-state-in-effect': 'off',
+      // False positive with react-hook-form's watch() API (warning only).
+      'react-hooks/incompatible-library': 'off',
+    },
   },
 ])

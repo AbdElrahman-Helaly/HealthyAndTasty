@@ -14,8 +14,13 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://healthyandtasty.runasp.net',
+        target: 'http://localhost:5087',
         changeOrigin: true,
+      },
+      '/hubs': {
+        target: 'http://localhost:5087',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

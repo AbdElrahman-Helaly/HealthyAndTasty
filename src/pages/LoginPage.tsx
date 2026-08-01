@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +14,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { branding } from '@/config/branding';
 
 const schema = z.object({
-  employeeCode: z.string().min(1, 'كود الموظف مطلوب'),
+  emailOrPhone: z.string().min(1, 'البريد الإلكتروني أو رقم الهاتف مطلوب'),
   password: z.string().min(1, 'كلمة المرور مطلوبة'),
 });
 
@@ -38,12 +38,12 @@ export function LoginPage() {
 
   async function onSubmit(data: FormData) {
     setError('');
-    const success = await login(data);
-    if (success) {
+    const result = await login(data);
+    if (result.ok) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       navigate(from ?? '/dashboard', { replace: true });
     } else {
-      setError('كود الموظف أو كلمة المرور غير صحيحة');
+      setError(result.error || (isRtl ? 'بيانات الدخول غير صحيحة' : 'Invalid credentials'));
     }
   }
 
@@ -79,14 +79,14 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
             <Input
-              label={t('auth.employeeCode')}
+              label={t('auth.emailOrPhone')}
               type="text"
               autoComplete="username"
-              placeholder="EMP-001"
+              placeholder="admin@healthyandtasty.com"
               dir="ltr"
-              icon={<User className="h-5 w-5" />}
-              error={errors.employeeCode?.message}
-              {...register('employeeCode')}
+              icon={<Mail className="h-5 w-5" />}
+              error={errors.emailOrPhone?.message}
+              {...register('emailOrPhone')}
             />
             <Input
               label={t('auth.password')}
@@ -149,6 +149,26 @@ export function LoginPage() {
           </form>
         </div>
       </motion.div>
+
+      {/* Scrolling brand message */}
+      <div className="mt-6 w-full max-w-sm xl:max-w-md mx-auto">
+        <div className="scroll-text-mask rounded-2xl bg-white/60 backdrop-blur-sm border border-purple-200/40 shadow-[0_4px_16px_rgba(109,76,255,0.06)]">
+          <div className="scroll-text-track py-3.5">
+            {[1, 2].map((i) => (
+              <span key={i} className="flex items-center gap-2 px-5 whitespace-nowrap text-base font-arabic font-semibold text-[#4C1D95]/80" style={{ fontFamily: 'Cairo, sans-serif' }}>
+                <span className="text-lg shrink-0">✨</span>
+                <span>
+                  <span className="bg-gradient-to-r from-[#8B5CF6] to-[#6D4CFF] bg-clip-text text-transparent font-bold">هيلثي &amp; تيستي</span>
+                  {' '}هي علامة تجارية رائدة تقدم{' '}
+                  <span className="text-[#22C55E] font-bold">بدائل صحية</span>
+                  {' '}لآلاف العملاء في الدول العربية.
+                </span>
+                <span className="text-purple-300/40 mx-2">✦</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </AuthLayout>
   );
 }

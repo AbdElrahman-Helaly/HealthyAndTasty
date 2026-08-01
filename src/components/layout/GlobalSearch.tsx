@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { listOrders } from '@/api/orders.api';
+import { listEmployees } from '@/api/employees.api';
+import { listBranches } from '@/api/branches.api';
 import type { SearchResultItem } from '@/types';
 
 export function GlobalSearch() {
@@ -10,8 +12,13 @@ export function GlobalSearch() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [results, setResults] = useState<{ branches: SearchResultItem[]; employees: SearchResultItem[]; orders: SearchResultItem[] }>({
+    branches: [],
+    employees: [],
+    orders: [],
+  });
   const ref = useRef<HTMLDivElement>(null);
-  const { results, isLoading, total } = useGlobalSearch(query);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -23,6 +30,62 @@ export function GlobalSearch() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults({ branches: [], employees: [], orders: [] });
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const [orders, employees, branches] = await Promise.all([
+          listOrders({ search: q, page: 1, pageSize: 5 }).catch(() => null),
+          listEmployees({ search: q, page: 1, pageSize: 5 }).catch(() => null),
+          listBranches().catch(() => null),
+        ]);
+        if (cancelled) return;
+        setResults({
+          orders: (orders?.items ?? []).map((o) => ({
+            id: String(o.id),
+            type: 'order',
+            title: o.orderNumber,
+            subtitle: `${o.customerName} — ${o.branchName}`,
+            href: `/orders/${o.id}`,
+          })),
+          employees: (employees?.items ?? []).map((e) => ({
+            id: String(e.id),
+            type: 'employee',
+            title: e.name,
+            subtitle: e.email || e.phone,
+            href: `/employees/${e.id}`,
+          })),
+          branches: (branches ?? [])
+            .filter((b) => b.name.toLowerCase().includes(q.toLowerCase()))
+            .slice(0, 5)
+            .map((b) => ({
+              id: b.id,
+              type: 'branch',
+              title: b.name,
+              subtitle: b.address || `Odoo #${b.odooBranchId}`,
+              href: `/branches`,
+            })),
+        });
+      } catch {
+        if (!cancelled) setResults({ branches: [], employees: [], orders: [] });
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  const total = results.branches.length + results.employees.length + results.orders.length;
+
   function handleSelect(item: SearchResultItem) {
     navigate(item.href);
     setQuery('');
@@ -32,8 +95,7 @@ export function GlobalSearch() {
   const groups = [
     { key: 'branches', label: t('search.branches'), items: results.branches },
     { key: 'employees', label: t('search.employees'), items: results.employees },
-    { key: 'products', label: t('search.products'), items: results.products },
-    { key: 'categories', label: t('search.categories'), items: results.categories },
+    { key: 'orders', label: t('search.orders'), items: results.orders },
   ].filter((g) => g.items.length > 0);
 
   return (

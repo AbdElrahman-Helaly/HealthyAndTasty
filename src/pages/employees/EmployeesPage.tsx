@@ -1,492 +1,189 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Pencil, Trash2, RefreshCw, Plus, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Search, UserPlus, KeyRound, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { DataTable } from '@/components/shared/DataTable';
-import { FormDrawer } from '@/components/shared/FormDrawer';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { DataTable, type Column } from '@/components/shared/DataTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { Input } from '@/components/ui/Input';
-import { LoadingSkeleton, Spinner } from '@/components/ui/Spinner';
-import { ConfirmDialog } from '@/components/ui/Modal';
-import { useEmployeeDetails, useEmployees, useRoles } from '@/hooks/useEmployeeDetails';
-import { useBranches } from '@/hooks/useBranchDetails';
-import { useCountry } from '@/context/CountryContext';
-import { deleteEmployee, updateEmployee, changeUserRole } from '@/services/employee.service';
-import { createBranchEmployee } from '@/services/branch.service';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { FormDrawer } from '@/components/shared/FormDrawer';
+import { MultiSelect } from '@/components/ui/MultiSelect';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { listEmployees, createEmployee } from '@/api/employees.api';
+import { listRoles } from '@/api/roles.api';
+import { listBranches } from '@/api/branches.api';
+import { PERMISSIONS } from '@/types/permissions';
+import type { BranchAdmin, Employee, RoleDto } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { BranchEmployee, EmployeeUpdateRequest } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { useToast } from '@/hooks/useToast';
 
-// ---------------------------------------------------------------------------
-// Skeleton row component for loading state
-// ---------------------------------------------------------------------------
-function SkeletonRows({ count = 8 }: { count?: number }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} className="border-b border-outline-variant/20">
-          {[120, 200, 150, 80].map((w, j) => (
-            <td key={j} className="px-4 py-3">
-              <LoadingSkeleton className={`h-4 w-[${w}px]`} />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
+const PAGE_SIZE = 12;
+
+const createSchema = z.object({
+  firstName: z.string().min(2, 'الاسم الأول مطلوب'),
+  lastName: z.string().min(2, 'اسم العائلة مطلوب'),
+  phone: z.string().min(6, 'رقم الهاتف مطلوب'),
+  email: z.string().email('بريد إلكتروني غير صالح').optional().or(z.literal('')),
+  roleId: z.string().min(1, 'الرجاء اختيار الدور'),
+});
+
+type CreateForm = z.infer<typeof createSchema>;
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-
-// ---------------------------------------------------------------------------
-// Create Employee Drawer
-// ---------------------------------------------------------------------------
-interface CreateDrawerProps {
-  open: boolean;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function CreateEmployeeDrawer({ open, onClose, onSaved }: CreateDrawerProps) {
-  const { t } = useTranslation();
-  const { selectedCountry } = useCountry();
-  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
-
-  const [form, setForm] = useState({
-    displayName: '',
-    employeeCode: '',
-    password: '',
-    branchId: '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const set =
-    (field: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [field]: e.target.value }));
-
-  const handleSave = async () => {
-    if (!form.employeeCode || !form.password || !form.displayName) {
-      setError('بيانات ناقصة: الاسم، كود الموظف، وكلمة المرور مطلوبين');
-      return;
-    }
-    if (!form.branchId) {
-      setError('يرجى اختيار الفرع');
-      return;
-    }
-    if (!/[a-z]/.test(form.password)) {
-      setError('كلمة المرور يجب أن تحتوي على حرف إنجليزي صغير واحد على الأقل');
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      await createBranchEmployee(form);
-      setForm({ displayName: '', employeeCode: '', password: '', branchId: '' });
-      onSaved();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل إنشاء الموظف');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <FormDrawer
-      open={open}
-      onClose={onClose}
-      title="إضافة موظف جديد"
-      footer={
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-sm">
-            {error && <span className="text-error">{error}</span>}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button loading={saving} onClick={handleSave}>
-              {t('common.save')}
-            </Button>
-          </div>
-        </div>
-      }
-    >
-      <div className="space-y-4">
-        <Input label="الاسم" value={form.displayName} onChange={set('displayName')} placeholder="Mohamed Ahmed" />
-        <Input label="كود الموظف" value={form.employeeCode} onChange={set('employeeCode')} placeholder="EMP-001" />
-        <Input label="كلمة المرور" type="password" value={form.password} onChange={set('password')} />
-
-        <div>
-          <label className="text-sm font-semibold text-gray-800">{t('nav.branches')}</label>
-          <select
-            value={form.branchId}
-            onChange={set('branchId')}
-            disabled={branchesLoading}
-            className="mt-1.5 h-[48px] w-full rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-4 text-sm text-gray-900 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
-          >
-            <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
-            {(branches ?? []).map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-    </FormDrawer>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Edit Employee Drawer
-// ---------------------------------------------------------------------------
-interface EditDrawerProps {
-  employeeId: string | null;
-  open: boolean;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function EditEmployeeDrawer({ employeeId, open, onClose, onSaved }: EditDrawerProps) {
-  const { t } = useTranslation();
-  const { selectedCountry } = useCountry();
-  const { data: employee, isLoading, error, refetch } = useEmployeeDetails(employeeId ?? undefined);
-  const { data: roles, isLoading: rolesLoading } = useRoles();
-  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
-
-  const [form, setForm] = useState<Partial<EmployeeUpdateRequest>>({});
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState(false);
-
-  const getValue = (field: keyof EmployeeUpdateRequest): string => {
-    if (form[field] !== undefined) return String(form[field]);
-    if (!employee) return '';
-    const map: Record<keyof EmployeeUpdateRequest, string> = {
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      email: employee.email,
-      phoneE164: employee.phoneE164,
-      employeeCode: employee.employeeCode,
-      employeeBranchId: employee.employeeBranchId,
-      password: '',
-    };
-    return map[field];
-  };
-
-  const set = (field: keyof EmployeeUpdateRequest) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
-
-  const handleSave = async () => {
-    if (!employeeId || !employee) return;
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const payload: EmployeeUpdateRequest = {
-        firstName: getValue('firstName'),
-        lastName: getValue('lastName'),
-        email: getValue('email'),
-        phoneE164: getValue('phoneE164'),
-        employeeCode: getValue('employeeCode'),
-        employeeBranchId: getValue('employeeBranchId'),
-      };
-      const pw = getValue('password');
-      if (pw) payload.password = pw;
-
-      await updateEmployee(employeeId, payload);
-      setSuccessMsg(true);
-      setTimeout(() => setSuccessMsg(false), 3000);
-      onSaved();
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save changes');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Role change state
-  const [pendingRole, setPendingRole] = useState<string | null>(null);
-  const [roleChanging, setRoleChanging] = useState(false);
-  const [roleError, setRoleError] = useState<string | null>(null);
-
-  const handleRoleConfirm = async () => {
-    if (!employee || !pendingRole) return;
-    setRoleChanging(true);
-    setRoleError(null);
-    try {
-      await changeUserRole(employee.userId, pendingRole);
-      setPendingRole(null);
-      refetch();
-      onSaved();
-    } catch (err) {
-      setRoleError(err instanceof Error ? err.message : 'Failed to change role');
-      setPendingRole(null);
-    } finally {
-      setRoleChanging(false);
-    }
-  };
-
-  return (
-    <>
-      <FormDrawer
-        open={open}
-        onClose={onClose}
-        title={t('common.edit') + ' ' + t('nav.employees').replace(/s$/, '')}
-        footer={
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm">
-              {saveError && <span className="text-error">{saveError}</span>}
-              {roleError && <span className="text-error">{roleError}</span>}
-              {successMsg && <span className="text-green-600">Saved successfully</span>}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={onClose}>
-                {t('common.cancel')}
-              </Button>
-              <Button loading={saving} onClick={handleSave} disabled={!employee || isLoading}>
-                {t('common.save')}
-              </Button>
-            </div>
-          </div>
-        }
-      >
-        {isLoading && (
-          <div className="space-y-4">
-            {[...Array(6)].map((_, i) => (
-              <LoadingSkeleton key={i} className="h-11 w-full" />
-            ))}
-          </div>
-        )}
-
-        {error && !isLoading && (
-          <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <p className="text-sm text-error">{error.message}</p>
-            <Button variant="secondary" size="sm" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" /> Retry
-            </Button>
-          </div>
-        )}
-
-        {employee && !isLoading && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="First Name" value={getValue('firstName')} onChange={set('firstName')} />
-              <Input label="Last Name" value={getValue('lastName')} onChange={set('lastName')} />
-            </div>
-            <Input label="Email" type="email" value={getValue('email')} onChange={set('email')} />
-            <Input label="Phone (E.164)" value={getValue('phoneE164')} onChange={set('phoneE164')} placeholder="+10001234567" />
-            <Input label="Employee Code" value={getValue('employeeCode')} onChange={set('employeeCode')} />
-            <div>
-              <label className="text-sm font-semibold text-gray-800">{t('nav.branches')}</label>
-              <select
-                value={getValue('employeeBranchId')}
-                onChange={(e) => setForm((f) => ({ ...f, employeeBranchId: e.target.value }))}
-                disabled={branchesLoading}
-                className="mt-1.5 h-[48px] w-full rounded-2xl border border-[#DDD6FE] bg-[#F9FAFF] px-4 text-sm text-gray-900 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
-              >
-                <option value="">{branchesLoading ? t('common.loading') : '—'}</option>
-                {(branches ?? []).map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Input label="New Password" type="password" value={getValue('password')} onChange={set('password')} placeholder="Leave blank to keep current" />
-
-            {/* Role change section */}
-            <div className="pt-2">
-              <label className="text-sm font-medium text-on-surface">Role</label>
-              <div className="mt-1.5 flex items-center gap-2">
-                <span className="flex-1 rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 text-sm text-on-surface">
-                  {employee.role}
-                </span>
-                <select
-                  className="h-11 rounded-lg border border-outline-variant bg-surface px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  disabled={rolesLoading || roleChanging}
-                  onChange={(e) => e.target.value && setPendingRole(e.target.value)}
-                  defaultValue=""
-                >
-                  <option value="">Change role…</option>
-                  {roles.map((r, i) => (
-                    <option key={r || `role-${i}`} value={r}>{r}</option>
-                  ))}
-                </select>
-                {roleChanging && <Spinner className="h-4 w-4" />}
-              </div>
-            </div>
-          </div>
-        )}
-      </FormDrawer>
-
-      {/* Role change confirmation dialog */}
-      <ConfirmDialog
-        open={pendingRole !== null}
-        onClose={() => setPendingRole(null)}
-        onConfirm={handleRoleConfirm}
-        loading={roleChanging}
-        title="Change Role"
-        message={`Change role to "${pendingRole}"? This will take effect immediately.`}
-      />
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// View Employee Drawer (read-only details panel)
-// ---------------------------------------------------------------------------
-interface ViewDrawerProps {
-  employeeId: string | null;
-  open: boolean;
-  onClose: () => void;
-}
-
-function ViewEmployeeDrawer({ employeeId, open, onClose }: ViewDrawerProps) {
-  const { data: employee, isLoading, error, refetch } = useEmployeeDetails(employeeId ?? undefined);
-
-  return (
-    <FormDrawer open={open} onClose={onClose} title="Employee Details">
-      {isLoading && (
-        <div className="space-y-4">
-          {[...Array(6)].map((_, i) => (
-            <LoadingSkeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      )}
-
-      {error && !isLoading && (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <p className="text-sm text-error">{error.message}</p>
-          <Button variant="secondary" size="sm" onClick={refetch}>
-            <RefreshCw className="h-4 w-4" /> Retry
-          </Button>
-        </div>
-      )}
-
-      {employee && !isLoading && (
-        <div className="space-y-5">
-          <div className="rounded-xl bg-surface-container p-4">
-            <p className="text-xl font-semibold text-on-surface">{employee.displayName}</p>
-            <p className="mt-0.5 text-sm text-on-surface-variant">{employee.role}</p>
-          </div>
-          <dl className="space-y-3 text-sm">
-            <DetailRow label="Employee Code" value={employee.employeeCode} />
-            <DetailRow label="Email" value={employee.email} />
-            <DetailRow label="Phone" value={employee.phoneE164} />
-            <DetailRow label="Branch ID" value={employee.employeeBranchId} />
-            {employee.branch && (
-              <DetailRow label="Branch Name" value={employee.branch.name} />
-            )}
-            <DetailRow label="Created" value={formatDate(employee.createdAt)} />
-          </dl>
-        </div>
-      )}
-    </FormDrawer>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <dt className="min-w-[110px] text-on-surface-variant">{label}</dt>
-      <dd className="text-end font-medium text-on-surface">{value || '—'}</dd>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main EmployeesPage
-// ---------------------------------------------------------------------------
 
 export function EmployeesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { show: showToast } = useToast();
+  const [rows, setRows] = useState<Employee[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+
+  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [branches, setBranches] = useState<BranchAdmin[]>([]);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
+
   usePageTitle(t('employees.title'));
-  const { selectedCountry } = useCountry();
-  const { data: branches, isLoading: branchesLoading } = useBranches(selectedCountry);
-  const [branchFilter, setBranchFilter] = useState('');
 
-  const { items, isLoading, isFetchingMore, error, refetch, loadMore, hasMore } = useEmployees(branchFilter || undefined);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateForm>({ resolver: zodResolver(createSchema) });
 
-  // Drawer state
-  const [createOpen, setCreateOpen] = useState(false);
-  const [viewId, setViewId] = useState<string | null>(null);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<BranchEmployee | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setDeleteError(null);
+  const load = useCallback(async (p: number, q: string) => {
+    setError('');
     try {
-      await deleteEmployee(deleteTarget.id);
-      setDeleteTarget(null);
-      refetch();
+      const res = await listEmployees({ page: p, pageSize: PAGE_SIZE, search: q || undefined });
+      setRows(res.items);
+      setTotalPages(Math.max(1, res.totalPages));
+      setPage(p);
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete employee');
-      setDeleting(false);
+      setError(err instanceof Error ? err.message : 'فشل تحميل الموظفين');
     }
-  }, [deleteTarget, refetch]);
+  }, []);
 
-  const columns = [
-    {
-      key: 'code',
-      header: 'Employee Code',
-      render: (row: BranchEmployee) => (
-        <span className="font-mono text-sm text-primary">{row.employeeCode || '—'}</span>
-      ),
-    },
-    {
-      key: 'employeeName',
-      header: 'Employee Name',
-      render: (row: BranchEmployee) => (
-        <span className="font-medium text-on-surface">{row.employeeName || '—'}</span>
-      ),
-    },
-    {
-      key: 'branchName',
-      header: 'Branch',
-      render: (row: BranchEmployee) => (
-        <span className="text-sm text-on-surface-variant">{row.branchName || '—'}</span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: t('common.actions'),
-      render: (row: BranchEmployee) => (
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="View"
-            onClick={() => setViewId(row.id)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title={t('common.edit')}
-            onClick={() => setEditId(row.id)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title={t('common.delete')}
-            className="text-error hover:bg-error/10"
-            onClick={() => setDeleteTarget(row)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const timer = setTimeout(() => void load(1, search), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
+
+  useEffect(() => {
+    void Promise.all([listRoles(), listBranches()])
+      .then(([r, b]) => {
+        setRoles(r);
+        setBranches(b);
+      })
+      .catch(() => {
+        // dropdowns can stay empty; creation will surface errors
+      });
+  }, []);
+
+  function openDrawer() {
+    reset();
+    setSelectedBranchIds([]);
+    setDrawerOpen(true);
+  }
+
+  async function onCreate(data: CreateForm) {
+    setIsCreating(true);
+    try {
+      const res = await createEmployee({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        email: data.email || null,
+        roleId: Number(data.roleId),
+        branchIds: selectedBranchIds,
+      });
+      setDrawerOpen(false);
+      if (res.temporaryPassword) {
+        setTemporaryPassword(res.temporaryPassword);
+      } else {
+        showToast('تم إنشاء الموظف بنجاح', 'success');
+      }
+      void load(1, search);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'فشل إنشاء الموظف', 'error');
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  const columns = useMemo<Column<Employee>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'الموظف',
+        render: (e) => (
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6D4CFF] text-xs font-bold text-white">
+              {e.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium text-on-surface">{e.name}</p>
+              <p className="text-[11px] text-on-surface-variant/60" dir="ltr">{e.phone}</p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'email',
+        header: 'البريد الإلكتروني',
+        render: (e) => <span className="text-on-surface-variant/80" dir="ltr">{e.email || '—'}</span>,
+      },
+      {
+        key: 'role',
+        header: 'الدور',
+        render: (e) => <span className="rounded-full bg-primary-surface px-2.5 py-1 text-xs font-semibold text-primary">{e.role}</span>,
+      },
+      {
+        key: 'branches',
+        header: 'الفروع',
+        render: (e) => (
+          <div className="flex flex-wrap gap-1 max-w-[220px]">
+            {e.branchNames.length === 0 && <span className="text-on-surface-variant/50">—</span>}
+            {e.branchNames.slice(0, 2).map((b) => (
+              <span key={b} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-on-surface-variant">{b}</span>
+            ))}
+            {e.branchNames.length > 2 && <span className="text-[11px] text-on-surface-variant/60">+{e.branchNames.length - 2}</span>}
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'الحالة',
+        render: (e) => (
+          <span className={e.isActive ? 'badge badge-success' : 'badge badge-danger'}>
+            {e.isActive ? 'نشط' : 'موقوف'}
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        header: 'تاريخ الإنشاء',
+        render: (e) => <span className="text-xs text-on-surface-variant/60">{formatDate(e.createdAt)}</span>,
+      },
+    ],
+    [],
+  );
 
   return (
     <div>
@@ -494,135 +191,105 @@ export function EmployeesPage() {
         title={t('employees.title')}
         subtitle={t('employees.subtitle')}
         actions={
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Filter className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                disabled={branchesLoading}
-                className="h-[40px] rounded-xl border border-[#DDD6FE] bg-[#F9FAFF] ps-3 pe-9 text-sm text-gray-700 transition-all duration-200 focus:border-[#7C3AED] focus:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] focus:outline-none disabled:opacity-50"
-              >
-                <option value="">كل الفروع</option>
-                {(branches ?? []).map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
-              <Plus className="h-4 w-4" />
+          <PermissionGate permission={PERMISSIONS.EmployeesCreate}>
+            <Button size="sm" className="gap-1.5" onClick={openDrawer}>
+              <UserPlus className="h-4 w-4" />
               إضافة موظف
             </Button>
-          </div>
+          </PermissionGate>
         }
       />
 
-      <Card padding="none">
-        {/* Error state */}
-        {error && !isLoading && (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <p className="text-sm text-error">{error.message}</p>
-            <Button variant="secondary" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" /> Retry
-            </Button>
-          </div>
-        )}
-
-        {/* Loading skeleton */}
-        {isLoading && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr className="border-b border-outline-variant/40">
-                  {['Employee Code', 'Employee Name', 'Branch', 'Actions'].map(
-                    (h) => (
-                      <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-on-surface-variant">
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                <SkeletonRows count={8} />
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Data table */}
-        {!isLoading && !error && (
-          <DataTable
-            columns={columns}
-            data={items}
-            keyExtractor={(row) => row.id}
-            emptyMessage="No employees found."
+      {/* Filters */}
+      <Card padding="md" className="mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            label="بحث"
+            placeholder="الاسم أو الهاتف أو البريد"
+            icon={<Search className="h-4 w-4" />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-        )}
+        </div>
+      </Card>
 
-        {/* Load More / Infinite scroll trigger */}
-        {!isLoading && !error && hasMore && (
-          <div className="flex justify-center border-t border-outline-variant/20 px-4 py-4">
-            <Button variant="secondary" loading={isFetchingMore} onClick={loadMore}>
-              {isFetchingMore ? 'Loading…' : 'Load More'}
+      <Card padding="none">
+        {error && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm font-medium text-on-surface-variant">{error}</p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => void load(page, search)}>
+              إعادة المحاولة
             </Button>
           </div>
         )}
-
-        {/* Fetching more indicator at bottom */}
-        {isFetchingMore && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <tbody>
-                <SkeletonRows count={4} />
-              </tbody>
-            </table>
-          </div>
+        {!error && (
+          <>
+            <DataTable
+              columns={columns}
+              data={rows}
+              keyExtractor={(e) => String(e.id)}
+              onRowClick={(e) => navigate(`/employees/${e.id}`)}
+              emptyMessage="لا يوجد موظفون"
+            />
+            <div className="px-4 pb-4">
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={(p) => void load(p, search)} />
+            </div>
+          </>
         )}
       </Card>
 
-      {/* Create Drawer */}
-      <CreateEmployeeDrawer
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSaved={() => refetch()}
-      />
-
-      {/* View Drawer */}
-      <ViewEmployeeDrawer
-        key={viewId}
-        employeeId={viewId}
-        open={viewId !== null}
-        onClose={() => setViewId(null)}
-      />
-
-      {/* Edit Drawer */}
-      <EditEmployeeDrawer
-        key={editId}
-        employeeId={editId}
-        open={editId !== null}
-        onClose={() => setEditId(null)}
-        onSaved={() => refetch()}
-      />
-
-      {/* Delete confirmation */}
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        onClose={() => {
-          setDeleteTarget(null);
-          setDeleteError(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
-        title="Delete Employee"
-        message={
-          deleteError
-            ? `Error: ${deleteError}. Try again?`
-            : `Delete "${deleteTarget?.employeeName}"? This cannot be undone.`
+      {/* Create employee drawer */}
+      <FormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="إضافة موظف جديد"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setDrawerOpen(false)}>إلغاء</Button>
+            <Button loading={isCreating} onClick={() => void handleSubmit(onCreate)()}>إنشاء الموظف</Button>
+          </div>
         }
-      />
+      >
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onCreate)}>
+          <Input label="الاسم الأول" placeholder="محمد" error={errors.firstName?.message} {...register('firstName')} />
+          <Input label="اسم العائلة" placeholder="أحمد" error={errors.lastName?.message} {...register('lastName')} />
+          <Input label="رقم الهاتف" placeholder="05xxxxxxxx" dir="ltr" error={errors.phone?.message} {...register('phone')} />
+          <Input label="البريد الإلكتروني (اختياري)" placeholder="name@example.com" dir="ltr" error={errors.email?.message} {...register('email')} />
+          <Select
+            label="الدور"
+            error={errors.roleId?.message}
+            defaultValue=""
+            onChange={(e) => setValue('roleId', e.target.value, { shouldValidate: true })}
+          >
+            <option value="" disabled>اختر الدور</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>{r.displayName}</option>
+            ))}
+          </Select>
+          <MultiSelect
+            label="الفروع"
+            options={branches.map((b) => ({ label: b.name, value: b.id }))}
+            value={selectedBranchIds}
+            onChange={setSelectedBranchIds}
+            placeholder="اختر الفروع"
+          />
+        </form>
+      </FormDrawer>
+
+      {/* Temporary password modal */}
+      <Modal open={temporaryPassword !== null} onClose={() => setTemporaryPassword(null)} title="تم إنشاء الموظف">
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 text-success">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <p className="text-sm text-on-surface-variant">كلمة المرور المؤقتة تظهر مرة واحدة فقط. يرجى حفظها وإرسالها للموظف:</p>
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+            <KeyRound className="h-4 w-4 text-amber-600" />
+            <span className="font-mono text-lg font-bold text-amber-700" dir="ltr">{temporaryPassword}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => setTemporaryPassword(null)}>حسناً</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

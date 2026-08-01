@@ -4,17 +4,17 @@ import '@/i18n';
 import '@/index.css';
 import App from '@/App';
 import { AuthProvider } from '@/context/AuthContext';
-import { CountryProvider } from '@/context/CountryContext';
 import { PermissionProvider } from '@/context/PermissionContext';
+import { ToastProvider } from '@/hooks/useToast';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <CountryProvider>
+    <ToastProvider>
+      <AuthProvider>
         <PermissionProvider>
           <App />
         </PermissionProvider>
-      </CountryProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ToastProvider>
   </StrictMode>,
 );

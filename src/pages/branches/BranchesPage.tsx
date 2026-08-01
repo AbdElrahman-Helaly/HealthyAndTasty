@@ -1,318 +1,141 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, RefreshCw, Eye, Trash2 } from 'lucide-react';
+import { Pencil, RefreshCw, Building2, MapPin, Radio } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { DataTable } from '@/components/shared/DataTable';
-import { SearchFilters, SelectFilter } from '@/components/shared/SearchFilters';
+import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FormDrawer } from '@/components/shared/FormDrawer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/Badge';
-import { LoadingSkeleton } from '@/components/ui/Spinner';
-import { ConfirmDialog } from '@/components/ui/Modal';
-import { useBranches } from '@/hooks/useBranchDetails';
-import { useCountries } from '@/hooks/useCountries';
+import { Select } from '@/components/ui/Select';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { listBranches, updateBranch } from '@/api/branches.api';
+import { PERMISSIONS } from '@/types/permissions';
+import type { BranchAdmin } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { createBranch, updateBranch, deleteBranch } from '@/services/branch.service';
-import type { Branch, CreateBranchRequest, UpdateBranchRequest } from '@/types';
+import { useToast } from '@/hooks/useToast';
 
-// ---------------------------------------------------------------------------
-// Create Branch Drawer
-// ---------------------------------------------------------------------------
-
-interface CreateBranchDrawerProps {
+interface EditBranchDrawerProps {
+  branch: BranchAdmin | null;
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: (updated: BranchAdmin) => void;
 }
 
-function CreateBranchDrawer({ open, onClose, onCreated }: CreateBranchDrawerProps) {
-  const { t } = useTranslation();
-  const [form, setForm] = useState<Partial<CreateBranchRequest>>({ country: 'EG' });
+function EditBranchDrawer({ branch, open, onClose, onSaved }: EditBranchDrawerProps) {
+  const { show: showToast } = useToast();
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(0);
+  const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const set =
-    (field: keyof CreateBranchRequest) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value =
-        field === 'latitude' || field === 'longitude'
-          ? parseFloat(e.target.value) || 0
-          : e.target.value;
-      setForm((f) => ({ ...f, [field]: value }));
-    };
+  useEffect(() => {
+    if (branch) {
+      setName(branch.name);
+      setAddress(branch.address);
+      setDeliveryRadiusKm(branch.deliveryRadiusKm);
+      setIsActive(branch.isActive);
+    }
+  }, [branch]);
 
   const handleSave = async () => {
-    const { code, name, country, latitude, longitude } = form;
-    if (!code || !name || !country || latitude === undefined || longitude === undefined) {
-      setError('All fields are required.');
-      return;
-    }
+    if (!branch) return;
     setSaving(true);
-    setError(null);
     try {
-      await createBranch({ code, name, country, latitude, longitude });
-      setSuccess(true);
-      setForm({ country: 'EG' });
-      setTimeout(() => setSuccess(false), 3000);
-      onCreated();
+      const updated = await updateBranch(branch.id, {
+        name: name || undefined,
+        address: address || undefined,
+        deliveryRadiusKm: deliveryRadiusKm || undefined,
+        isActive,
+      });
+      onSaved(updated);
+      showToast('تم تحديث بيانات الفرع', 'success');
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create branch');
+      showToast(err instanceof Error ? err.message : 'فشل تحديث الفرع', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleClose = () => {
-    setForm({ country: 'EG' });
-    setError(null);
-    setSuccess(false);
-    onClose();
-  };
-
   return (
     <FormDrawer
       open={open}
-      onClose={handleClose}
-      title={t('common.create') + ' Branch'}
+      onClose={onClose}
+      title="تعديل الفرع"
       footer={
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-sm">
-            {error && <span className="text-error">{error}</span>}
-            {success && <span className="text-green-600">Branch created!</span>}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button loading={saving} onClick={handleSave}>
-              {t('common.create')}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            إلغاء
+          </Button>
+          <Button loading={saving} onClick={() => void handleSave()}>
+            حفظ
+          </Button>
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
+        <div className="rounded-lg bg-primary-surface px-3 py-2 text-sm">
+          <span className="text-on-surface-variant">كود Odoo: </span>
+          <span className="font-mono font-medium text-primary">{branch?.odooBranchId}</span>
+        </div>
+        <Input label="اسم الفرع" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input label="العنوان" value={address} onChange={(e) => setAddress(e.target.value)} />
         <Input
-          label="Branch Code"
-          value={form.code ?? ''}
-          onChange={set('code')}
-          placeholder="e.g. EG-CAI-01"
+          label="نطاق التوصيل (كم)"
+          type="number"
+          step="any"
+          value={String(deliveryRadiusKm)}
+          onChange={(e) => setDeliveryRadiusKm(parseFloat(e.target.value) || 0)}
         />
-        <Input
-          label="Branch Name"
-          value={form.name ?? ''}
-          onChange={set('name')}
-          placeholder="e.g. Cairo Downtown"
-        />
-        <Select
-          label="Country Code"
-          value={form.country ?? ''}
-          onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-        >
-          <option value="EG">Egypt</option>
-          <option value="SA">Saudi Arabia</option>
-          <option value="AE">UAE</option>
-        </Select>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Latitude"
-            type="number"
-            step="any"
-            value={form.latitude !== undefined ? String(form.latitude) : ''}
-            onChange={set('latitude')}
-            placeholder="30.0444"
+        <div className="flex items-center gap-3 pt-1">
+          <input
+            id="isActive"
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 rounded border-outline-variant accent-primary"
           />
-          <Input
-            label="Longitude"
-            type="number"
-            step="any"
-            value={form.longitude !== undefined ? String(form.longitude) : ''}
-            onChange={set('longitude')}
-            placeholder="31.2357"
-          />
+          <label htmlFor="isActive" className="text-sm font-medium text-on-surface">
+            نشط
+          </label>
         </div>
       </div>
     </FormDrawer>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Edit Branch Drawer
-// ---------------------------------------------------------------------------
-
-interface EditBranchDrawerProps {
-  branch: Branch | null;
-  open: boolean;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function EditBranchDrawer({ branch, open, onClose, onSaved }: EditBranchDrawerProps) {
-  const { t } = useTranslation();
-  const [form, setForm] = useState<Partial<UpdateBranchRequest>>({});
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  const getValue = (field: keyof UpdateBranchRequest): string | number | boolean => {
-    if (form[field] !== undefined) return form[field] as string | number | boolean;
-    if (!branch) return '';
-    const map: Record<keyof UpdateBranchRequest, string | number | boolean> = {
-      name: branch.name,
-      latitude: branch.latitude,
-      longitude: branch.longitude,
-      isActive: branch.isActive,
-    };
-    return map[field];
-  };
-
-  const setField =
-    (field: keyof UpdateBranchRequest) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value =
-        field === 'latitude' || field === 'longitude'
-          ? parseFloat(e.target.value) || 0
-          : field === 'isActive'
-          ? e.target.checked
-          : e.target.value;
-      setForm((f) => ({ ...f, [field]: value }));
-    };
-
-  const handleSave = async () => {
-    if (!branch) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const payload: UpdateBranchRequest = {
-        name: String(getValue('name')),
-        latitude: Number(getValue('latitude')),
-        longitude: Number(getValue('longitude')),
-        isActive: Boolean(getValue('isActive')),
-      };
-      await updateBranch(branch.id, payload);
-      setSuccess(true);
-      setForm({});
-      setTimeout(() => setSuccess(false), 3000);
-      onSaved();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update branch');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleClose = () => {
-    setForm({});
-    setError(null);
-    setSuccess(false);
-    onClose();
-  };
-
-  return (
-    <FormDrawer
-      open={open}
-      onClose={handleClose}
-      title={`${t('common.edit')} Branch`}
-      footer={
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-sm">
-            {error && <span className="text-error">{error}</span>}
-            {success && <span className="text-green-600">Saved!</span>}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button loading={saving} onClick={handleSave} disabled={!branch}>
-              {t('common.save')}
-            </Button>
-          </div>
-        </div>
-      }
-    >
-      {branch && (
-        <div className="space-y-4">
-          <div className="rounded-lg bg-surface-container px-3 py-2 text-sm">
-            <span className="text-on-surface-variant">Code: </span>
-            <span className="font-mono font-medium text-primary">{branch.code}</span>
-          </div>
-          <Input
-            label="Branch Name"
-            value={String(getValue('name'))}
-            onChange={setField('name')}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Latitude"
-              type="number"
-              step="any"
-              value={String(getValue('latitude'))}
-              onChange={setField('latitude')}
-            />
-            <Input
-              label="Longitude"
-              type="number"
-              step="any"
-              value={String(getValue('longitude'))}
-              onChange={setField('longitude')}
-            />
-          </div>
-          <div className="flex items-center gap-3 pt-1">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={Boolean(getValue('isActive'))}
-              onChange={setField('isActive')}
-              className="h-4 w-4 rounded border-outline-variant accent-primary"
-            />
-            <label htmlFor="isActive" className="text-sm font-medium text-on-surface">
-              Active
-            </label>
-          </div>
-        </div>
-      )}
-    </FormDrawer>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main BranchesPage
-// ---------------------------------------------------------------------------
-
 export function BranchesPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  usePageTitle(t('branches.title'));
-
-  const { data: countries } = useCountries();
-  const [countryFilter, setCountryFilter] = useState('');
-  const { data: branches, isLoading, error, refetch } = useBranches(countryFilter || undefined);
-
+  const [branches, setBranches] = useState<BranchAdmin[]>([]);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [editTarget, setEditTarget] = useState<BranchAdmin | null>(null);
+  usePageTitle(t('branches.title'));
 
-  // Drawer state
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Branch | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    setError('');
+    try {
+      setBranches(await listBranches());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'فشل تحميل الفروع');
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
-    if (!branches) return [];
+    const q = search.toLowerCase();
     return branches.filter((b) => {
-      const q = search.toLowerCase();
       const matchSearch =
         b.name.toLowerCase().includes(q) ||
-        b.code.toLowerCase().includes(q) ||
-        b.countryName.toLowerCase().includes(q);
+        String(b.odooBranchId).includes(q) ||
+        b.address.toLowerCase().includes(q);
       const matchStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' && b.isActive) ||
@@ -321,92 +144,78 @@ export function BranchesPage() {
     });
   }, [branches, search, statusFilter]);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      await deleteBranch(deleteTarget.id);
-      setDeleteTarget(null);
-      refetch();
-    } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete branch');
-      setDeleting(false);
-    }
-  }, [deleteTarget, refetch]);
-
-  const countryOptions = useMemo(() => {
-    const opts = [{ value: '', label: 'All Countries' }];
-    if (countries) {
-      countries.forEach((c) => opts.push({ value: c.code, label: c.name }));
-    }
-    return opts;
-  }, [countries]);
-
-  const columns = [
-    {
-      key: 'code',
-      header: 'Code',
-      render: (row: Branch) => (
-        <span className="font-mono text-sm text-primary">{row.code}</span>
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      render: (row: Branch) => <span className="font-medium">{row.name}</span>,
-    },
-    {
-      key: 'country',
-      header: 'Country',
-      render: (row: Branch) => row.countryName || row.countryCode,
-    },
-    {
-      key: 'employees',
-      header: 'Employees',
-      render: (row: Branch) => (
-        <span className="tabular-nums">{row.employeeCount ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'status',
-      header: t('common.status'),
-      render: (row: Branch) => <StatusBadge active={row.isActive} />,
-    },
-    {
-      key: 'actions',
-      header: t('common.actions'),
-      render: (row: Branch) => (
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="View"
-            onClick={() => navigate(`/branches/${row.id}`)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title={t('common.edit')}
-            onClick={() => setEditTarget(row)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title={t('common.delete')}
-            className="text-error hover:bg-error/10"
-            onClick={() => setDeleteTarget(row)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  const columns = useMemo<Column<BranchAdmin>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'الفرع',
+        render: (row) => (
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-surface text-primary">
+              <Building2 className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-medium text-on-surface">{row.name}</p>
+              <p className="text-[11px] text-on-surface-variant/60 font-mono">Odoo #{row.odooBranchId}</p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'address',
+        header: 'العنوان',
+        render: (row) => (
+          <span className="flex items-center gap-1.5 text-on-surface-variant/80">
+            <MapPin className="h-3.5 w-3.5" />
+            {row.address || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'deliveryRadiusKm',
+        header: 'نطاق التوصيل',
+        render: (row) => (
+          <span className="flex items-center gap-1.5 text-on-surface-variant/80">
+            <Radio className="h-3.5 w-3.5" />
+            {row.deliveryRadiusKm} كم
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'الحالة',
+        render: (row) => <StatusBadge active={row.isActive} />,
+      },
+      {
+        key: 'createdAt',
+        header: 'تاريخ الإنشاء',
+        render: (row) => (
+          <span className="text-xs text-on-surface-variant/60">
+            {new Date(row.createdAt).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'إجراءات',
+        render: (row) => (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <PermissionGate permission={PERMISSIONS.BranchesManage}>
+              <Button
+                variant="ghost"
+                size="icon"
+                title="تعديل"
+                onClick={() => setEditTarget(row)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </PermissionGate>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <div>
@@ -414,99 +223,49 @@ export function BranchesPage() {
         title={t('branches.title')}
         subtitle={t('branches.subtitle')}
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {t('common.create')} Branch
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => void load()}>
+            <RefreshCw className="h-4 w-4" />
+            تحديث
           </Button>
         }
       />
 
-      <Card>
-        <SearchFilters
-          searchValue={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search by name or code…"
-        >
-          <SelectFilter
-            label="Country"
-            value={countryFilter}
-            onChange={setCountryFilter}
-            options={countryOptions}
-          />
-          <SelectFilter
-            label={t('common.status')}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'all', label: t('common.all') },
-              { value: 'active', label: t('common.active') },
-              { value: 'inactive', label: t('common.inactive') },
-            ]}
-          />
-        </SearchFilters>
+      <Card padding="md" className="mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input label="بحث" placeholder="اسم الفرع أو العنوان" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Select label="الحالة" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">الكل</option>
+            <option value="active">نشط</option>
+            <option value="inactive">موقوف</option>
+          </Select>
+        </div>
+      </Card>
 
-        {/* Error state */}
-        {error && !isLoading && (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <p className="text-sm text-error">{error.message}</p>
-            <Button variant="secondary" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" /> Retry
+      <Card padding="none">
+        {error && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm font-medium text-on-surface-variant">{error}</p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => void load()}>
+              إعادة المحاولة
             </Button>
           </div>
         )}
-
-        {/* Loading skeleton */}
-        {isLoading && (
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <LoadingSkeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        )}
-
-        {/* Table */}
-        {!isLoading && !error && (
+        {!error && (
           <DataTable
             columns={columns}
             data={filtered}
             keyExtractor={(row) => row.id}
-            onRowClick={(row) => navigate(`/branches/${row.id}`)}
-            emptyMessage="No branches found."
+            emptyMessage="لا توجد فروع"
           />
         )}
       </Card>
 
-      {/* Create drawer */}
-      <CreateBranchDrawer
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={refetch}
-      />
-
-      {/* Edit drawer */}
       <EditBranchDrawer
         key={editTarget?.id}
         branch={editTarget}
         open={editTarget !== null}
         onClose={() => setEditTarget(null)}
-        onSaved={refetch}
-      />
-
-      {/* Delete confirmation */}
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        onClose={() => {
-          setDeleteTarget(null);
-          setDeleteError(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
-        title="Delete Branch"
-        message={
-          deleteError
-            ? `Error: ${deleteError}. Try again?`
-            : `Delete "${deleteTarget?.name}"? This action cannot be undone.`
-        }
+        onSaved={(updated) => setBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))}
       />
     </div>
   );
