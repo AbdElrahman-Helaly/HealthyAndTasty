@@ -34,6 +34,9 @@ const RolePermissionsPage = lazy(() =>
 const BranchesPage = lazy(() =>
   import('@/pages/branches/BranchesPage').then((m) => ({ default: m.BranchesPage })),
 );
+const ShippingRatesPage = lazy(() =>
+  import('@/pages/shipping/ShippingRatesPage').then((m) => ({ default: m.ShippingRatesPage })),
+);
 const ReportsPage = lazy(() =>
   import('@/pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 );
@@ -149,6 +152,14 @@ export default function App() {
               element={
                 <ProtectedRoute requiredPermissions={[PERMISSIONS.BranchesView]}>
                   <LazyPage><BranchesPage /></LazyPage>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="shipping-rates"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'generalmanager', 'branchmanager']}>
+                  <LazyPage><ShippingRatesPage /></LazyPage>
                 </ProtectedRoute>
               }
             />

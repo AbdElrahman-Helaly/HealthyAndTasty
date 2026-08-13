@@ -17,6 +17,7 @@ import {
   ChevronRight,
   LogOut,
   Sparkles,
+  Truck,
 } from 'lucide-react';
 import { branding } from '@/config/branding';
 import { cn, getInitials } from '@/lib/utils';
@@ -37,6 +38,8 @@ interface NavItem {
   labelKey: string;
   /** Menu item is visible only when the user holds this permission */
   permission?: string;
+  /** Menu item is visible only when the user holds ANY of these roles (case-insensitive contains) */
+  roles?: string[];
 }
 
 interface NavGroup {
@@ -60,6 +63,7 @@ const moduleStyles: Record<string, ModuleStyle> = {
   '/reports': { gradient: 'linear-gradient(135deg, #60A5FA, #2563EB)', shadow: 'rgba(37,99,235,0.35)', color: '#3B82F6' },
   '/statistics': { gradient: 'linear-gradient(135deg, #A78BFA, #4338CA)', shadow: 'rgba(67,56,202,0.35)', color: '#6366F1' },
   '/notifications': { gradient: 'linear-gradient(135deg, #FDE047, #EAB308)', shadow: 'rgba(234,179,8,0.35)', color: '#FACC15' },
+  '/shipping-rates': { gradient: 'linear-gradient(135deg, #2DD4BF, #0F766E)', shadow: 'rgba(13,148,136,0.35)', color: '#14B8A6' },
   '/profile': { gradient: 'linear-gradient(135deg, #94A3B8, #475569)', shadow: 'rgba(71,85,105,0.35)', color: '#64748B' },
 };
 
@@ -67,13 +71,20 @@ function getModuleStyle(path: string): ModuleStyle {
   return moduleStyles[path] ?? moduleStyles['/profile'];
 }
 
-function filterNavGroups(groups: NavGroup[], permissions: string[]): NavGroup[] {
+function filterNavGroups(
+  groups: NavGroup[],
+  permissions: string[],
+  role: string,
+): NavGroup[] {
+  const normalizedRole = role.toLowerCase();
   return groups
     .map((g) => ({
       ...g,
-      items: g.items.filter(
-        (item) => !item.permission || permissions.includes(item.permission),
-      ),
+      items: g.items.filter((item) => {
+        if (item.permission && !permissions.includes(item.permission)) return false;
+        if (item.roles && !item.roles.some((r) => normalizedRole.includes(r))) return false;
+        return true;
+      }),
     }))
     .filter((g) => g.items.length > 0);
 }
@@ -97,6 +108,12 @@ const navGroups: NavGroup[] = [
       { to: '/employees', icon: Users, labelKey: 'nav.employees', permission: PERMISSIONS.EmployeesView },
       { to: '/roles', icon: Shield, labelKey: 'nav.roles', permission: PERMISSIONS.RolesView },
       { to: '/branches', icon: Building2, labelKey: 'nav.branches', permission: PERMISSIONS.BranchesView },
+      {
+        to: '/shipping-rates',
+        icon: Truck,
+        labelKey: 'nav.shippingRates',
+        roles: ['admin', 'generalmanager', 'branchmanager'],
+      },
     ],
   },
   {
@@ -212,7 +229,6 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
   const isRtl = i18n.dir() === 'rtl';
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!navRef.current) return;
     const active = navRef.current.querySelector('[class*="bg-gradient-to-r"]');
@@ -278,7 +294,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, mobile, onMo
 
         {/* Navigation */}
         <nav ref={navRef} className="flex-1 overflow-y-auto py-5 custom-scrollbar" style={{ scrollBehavior: 'smooth' }}>
-          {filterNavGroups(navGroups, permissions).map((group, gi) => (
+          {filterNavGroups(navGroups, permissions, user?.role ?? '').map((group, gi) => (
             <div key={gi} className={gi > 0 ? 'mt-6' : ''}>
               {group.labelKey && !collapsed && (
                 <div className="px-6 pb-2.5">

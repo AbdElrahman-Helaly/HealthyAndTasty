@@ -308,6 +308,40 @@ export interface UpdateBranchRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Shipping Rates (admin)
+// ---------------------------------------------------------------------------
+
+export interface ShippingRate {
+  id: string;
+  branchId: string;
+  branchName: string;
+  minDistanceMeter: number;
+  maxDistanceMeter: number;
+  baseFee: number;
+  pricePerMeter: number;
+  isActive: boolean;
+}
+
+export interface CreateShippingRateRequest {
+  branchId: string;
+  minDistanceMeter: number;
+  maxDistanceMeter: number;
+  baseFee: number;
+  pricePerMeter: number;
+  isActive: boolean;
+}
+
+/** PUT body — every field is optional */
+export interface UpdateShippingRateRequest {
+  branchId?: string;
+  minDistanceMeter?: number;
+  maxDistanceMeter?: number;
+  baseFee?: number;
+  pricePerMeter?: number;
+  isActive?: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Statistics
 // ---------------------------------------------------------------------------
 

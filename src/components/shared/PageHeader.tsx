@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 const routeNames: Record<string, string> = {
   dashboard: 'لوحة التحكم',
   branches: 'الفروع',
+  'shipping-rates': 'أسعار التوصيل',
   employees: 'الموظفين',
   notifications: 'الإشعارات',
   orders: 'الطلبات',

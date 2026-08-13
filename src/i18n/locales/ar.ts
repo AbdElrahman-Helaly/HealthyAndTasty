@@ -18,6 +18,7 @@ export const ar: TranslationKeys = {
     roles: 'الأدوار',
     reports: 'التقارير',
     statistics: 'الإحصائيات',
+    shippingRates: 'أسعار التوصيل',
     profile: 'الملف الشخصي',
     sectionOrders: 'الطلبات',
     sectionReports: 'التقارير',
@@ -231,6 +232,10 @@ export const ar: TranslationKeys = {
     entity: 'الكيان',
     ipAddress: 'عنوان IP',
     timestamp: 'الوقت',
+  },
+  shippingRates: {
+    title: 'أسعار التوصيل',
+    subtitle: 'إدارة شرائح أسعار التوصيل حسب الفرع',
   },
   settings: {
     title: 'الإعدادات',

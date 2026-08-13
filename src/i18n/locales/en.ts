@@ -16,6 +16,7 @@ export const en = {
     roles: 'Roles',
     reports: 'Reports',
     statistics: 'Statistics',
+    shippingRates: 'Shipping Rates',
     profile: 'Profile',
     sectionOrders: 'Orders',
     sectionReports: 'Reports',
@@ -229,6 +230,10 @@ export const en = {
     entity: 'Entity',
     ipAddress: 'IP Address',
     timestamp: 'Timestamp',
+  },
+  shippingRates: {
+    title: 'Shipping Rates',
+    subtitle: 'Manage delivery pricing bands by branch',
   },
   settings: {
     title: 'Settings',
