@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "http://197.44.196.138/api/:path*"
+    },
+    {
+      "source": "/hubs/:path*",
+      "destination": "http://197.44.196.138/hubs/:path*"
     }
   ]
 }

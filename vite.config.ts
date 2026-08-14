@@ -14,11 +14,11 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:5087',
+        target: 'http://197.44.196.138',
         changeOrigin: true,
       },
       '/hubs': {
-        target: 'http://localhost:5087',
+        target: 'http://197.44.196.138',
         changeOrigin: true,
         ws: true,
       },
