@@ -19,6 +19,7 @@ export const ar: TranslationKeys = {
     reports: 'التقارير',
     statistics: 'الإحصائيات',
     shippingRates: 'أسعار التوصيل',
+    offers: 'العروض',
     profile: 'الملف الشخصي',
     sectionOrders: 'الطلبات',
     sectionReports: 'التقارير',
@@ -236,6 +237,10 @@ export const ar: TranslationKeys = {
   shippingRates: {
     title: 'أسعار التوصيل',
     subtitle: 'إدارة شرائح أسعار التوصيل حسب الفرع',
+  },
+  offers: {
+    title: 'العروض',
+    subtitle: 'إدارة عروض التطبيق والخصومات',
   },
   settings: {
     title: 'الإعدادات',

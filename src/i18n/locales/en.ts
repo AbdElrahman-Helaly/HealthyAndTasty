@@ -17,6 +17,7 @@ export const en = {
     reports: 'Reports',
     statistics: 'Statistics',
     shippingRates: 'Shipping Rates',
+    offers: 'Offers',
     profile: 'Profile',
     sectionOrders: 'Orders',
     sectionReports: 'Reports',
@@ -234,6 +235,10 @@ export const en = {
   shippingRates: {
     title: 'Shipping Rates',
     subtitle: 'Manage delivery pricing bands by branch',
+  },
+  offers: {
+    title: 'Offers',
+    subtitle: 'Manage app offers and discounts',
   },
   settings: {
     title: 'Settings',

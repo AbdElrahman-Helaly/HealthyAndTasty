@@ -342,6 +342,54 @@ export interface UpdateShippingRateRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Offers (admin)
+// ---------------------------------------------------------------------------
+
+export interface Offer {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  imageName: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
+  branchId: number;
+  isActive: boolean;
+  sortOrder: number;
+  productIds: number[];
+}
+
+export interface CreateOfferRequest {
+  title: string;
+  description: string;
+  image: string;
+  imageName: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
+  branchId: number;
+  isActive: boolean;
+  sortOrder: number;
+  productIds: number[];
+}
+
+/** PUT body — every field is optional */
+export interface UpdateOfferRequest {
+  title?: string;
+  description?: string;
+  image?: string;
+  imageName?: string;
+  discount?: number;
+  startDate?: string;
+  endDate?: string;
+  branchId?: number;
+  isActive?: boolean;
+  sortOrder?: number;
+  productIds?: number[];
+}
+
+// ---------------------------------------------------------------------------
 // Statistics
 // ---------------------------------------------------------------------------
 

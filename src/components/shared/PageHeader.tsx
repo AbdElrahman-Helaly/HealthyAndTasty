@@ -7,6 +7,7 @@ const routeNames: Record<string, string> = {
   dashboard: 'لوحة التحكم',
   branches: 'الفروع',
   'shipping-rates': 'أسعار التوصيل',
+  offers: 'العروض',
   employees: 'الموظفين',
   notifications: 'الإشعارات',
   orders: 'الطلبات',
