@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Modal, ConfirmDialog } from '@/components/ui/Modal';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { StatusBadge } from '@/components/ui/Badge';
 import { useAuth } from '@/context/AuthContext';
 import { listBranches } from '@/api/branches.api';
+import { listCatalogProducts } from '@/api/catalog.api';
 import {
   createOffer,
   deleteOffer,
@@ -20,7 +22,7 @@ import {
   updateOffer,
 } from '@/api/offers.api';
 import { formatDate } from '@/lib/utils';
-import type { BranchAdmin, Offer } from '@/types';
+import type { BranchAdmin, CatalogProduct, Offer } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
@@ -71,11 +73,12 @@ interface OfferFormModalProps {
   open: boolean;
   offer: Offer | null;
   branches: BranchAdmin[];
+  products: CatalogProduct[];
   onClose: () => void;
   onSaved: (offer: Offer) => void;
 }
 
-function OfferFormModal({ open, offer, branches, onClose, onSaved }: OfferFormModalProps) {
+function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: OfferFormModalProps) {
   const { show: showToast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -87,7 +90,7 @@ function OfferFormModal({ open, offer, branches, onClose, onSaved }: OfferFormMo
   const [branchId, setBranchId] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [sortOrder, setSortOrder] = useState('0');
-  const [productIds, setProductIds] = useState('');
+  const [productIds, setProductIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -103,17 +106,12 @@ function OfferFormModal({ open, offer, branches, onClose, onSaved }: OfferFormMo
     setBranchId(offer?.branchId ? String(offer.branchId) : '');
     setIsActive(offer?.isActive ?? true);
     setSortOrder(offer ? String(offer.sortOrder) : '0');
-    setProductIds(offer?.productIds?.length ? offer.productIds.join(', ') : '');
+    setProductIds(offer?.productIds?.length ? offer.productIds.map(String) : []);
     setErrors({});
   }, [open, offer]);
 
-  const parseProductIds = (raw: string): number[] => {
-    return raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map(Number)
-      .filter((n) => !Number.isNaN(n));
+  const parseProductIds = (raw: string[]): number[] => {
+    return raw.map(Number).filter((n) => !Number.isNaN(n));
   };
 
   const handleSubmit = async () => {
@@ -244,11 +242,12 @@ function OfferFormModal({ open, offer, branches, onClose, onSaved }: OfferFormMo
               </option>
             ))}
           </Select>
-          <Input
-            label="معرفات المنتجات"
-            placeholder="1, 2, 3"
+          <MultiSelect
+            label="المنتجات"
+            placeholder="اختر المنتجات..."
+            options={products.map((p) => ({ label: p.productName, value: String(p.id) }))}
             value={productIds}
-            onChange={(e) => setProductIds(e.target.value)}
+            onChange={setProductIds}
           />
         </div>
         <div className="flex items-center justify-between rounded-2xl border border-outline-variant bg-surface-container px-4 py-3">
@@ -277,6 +276,7 @@ export function OffersPage() {
   const { show: showToast } = useToast();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [branches, setBranches] = useState<BranchAdmin[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
@@ -298,12 +298,14 @@ export function OffersPage() {
   const load = useCallback(async () => {
     setError('');
     try {
-      const [offerList, branchList] = await Promise.all([
+      const [offerList, branchList, productList] = await Promise.all([
         listOffers(),
         listBranches(),
+        listCatalogProducts(),
       ]);
       setOffers(offerList);
       setBranches(branchList);
+      setProducts(productList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'فشل تحميل العروض');
     }
@@ -503,6 +505,7 @@ export function OffersPage() {
         open={modalOpen}
         offer={editingOffer}
         branches={branches}
+        products={products}
         onClose={() => setModalOpen(false)}
         onSaved={applyMutation}
       />
