@@ -160,9 +160,13 @@ async function refreshAndStore(): Promise<DashboardAuthResponse> {
 
 client.interceptors.request.use(
   async (config) => {
-    await ensureFreshToken();
-    const token = getAccessToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    // Never refresh / attach a token for auth endpoints (login, refresh, logout).
+    // Otherwise a stale stored refreshToken would be sent before login itself.
+    if (!isAuthPath(config.url)) {
+      await ensureFreshToken();
+      const token = getAccessToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error),
