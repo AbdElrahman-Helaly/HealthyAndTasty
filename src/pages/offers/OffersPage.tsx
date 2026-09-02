@@ -82,8 +82,9 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
   const { show: showToast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
   const [discount, setDiscount] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -98,8 +99,9 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
     if (!open) return;
     setTitle(offer?.title ?? '');
     setDescription(offer?.description ?? '');
-    setImage(offer?.image ?? '');
-    setImageName(offer?.imageName ?? '');
+    setSelectedFile(null);
+    setImageName(offer?.imageName ?? offer?.title?.replace(/\s+/g, '-').toLowerCase() ?? '');
+    setImagePreview(offer?.image ?? '');
     setDiscount(offer ? String(offer.discount) : '');
     setStartDate(offer ? toLocalInputValue(offer.startDate) : '');
     setEndDate(offer ? toLocalInputValue(offer.endDate) : '');
@@ -112,6 +114,28 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
 
   const parseProductIds = (raw: string[]): number[] => {
     return raw.map(Number).filter((n) => !Number.isNaN(n));
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setSelectedFile(null);
+      setImagePreview(offer?.image ?? '');
+      setImageName(offer?.imageName ?? '');
+      return;
+    }
+    if (!/jpeg|png|webp|gif|bmp/i.test(file.type)) {
+      showToast('نوع الملف غير مدعوم (jpeg/png/webp/gif/bmp فقط)', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('حجم الملف لا يتجاوز 10 MB', 'error');
+      return;
+    }
+    setSelectedFile(file);
+    setImageName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -134,7 +158,7 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
       const body = {
         title: title.trim(),
         description,
-        image,
+        image: offer?.image ?? '',
         imageName,
         discount: disc,
         startDate: new Date(startDate).toISOString(),
@@ -145,8 +169,8 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
         productIds: parseProductIds(productIds),
       };
       const saved = offer
-        ? await updateOffer(offer.id, body)
-        : await createOffer(body);
+        ? await updateOffer(offer.id, body, selectedFile ?? undefined)
+        : await createOffer(body, selectedFile ?? undefined);
       onSaved(saved);
       showToast(offer ? 'تم التحديث بنجاح' : 'تمت الإضافة بنجاح', 'success');
       onClose();
@@ -179,18 +203,32 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
           onChange={(e) => setDescription(e.target.value)}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="رابط الصورة"
-            placeholder="https://..."
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-          />
-          <Input
-            label="اسم الصورة"
-            placeholder="offer.jpg"
-            value={imageName}
-            onChange={(e) => setImageName(e.target.value)}
-          />
+          <div className="sm:col-span-2">
+            <label className="text-sm font-semibold text-on-surface mb-1.5 block">
+              صورة العرض
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="معاينة" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-xs text-on-surface-variant/60">بدون صورة</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/bmp"
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                  className="block w-full text-sm text-on-surface-variant file:mr-4 file:rounded-xl file:border-0 file:bg-primary-surface file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary-surface/70"
+                />
+                <p className="mt-1 text-xs text-on-surface-variant/60">
+                  {selectedFile ? selectedFile.name : 'اختر ملف (jpeg/png/webp/gif/bmp — حتى 10 MB)'}
+                  {offer?.image && !selectedFile && ' — سيتم الاحتفاظ بالصورة الحالية بدون تحديد ملف جديد'}
+                </p>
+              </div>
+            </div>
+          </div>
           <Input
             label="نسبة الخصم (%)"
             type="number"
