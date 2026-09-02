@@ -347,7 +347,23 @@ export interface UpdateShippingRateRequest {
 
 export interface CatalogProduct {
   id: number;
-  productName: string;
+  name: string;
+  price: number;
+  priceAfterDiscount: number;
+  discount: number;
+  image: string;
+  available: boolean;
+  categoryId: number;
+  categoryName: string;
+}
+
+/** GET /api/catalog/products returns a paged list */
+export interface CatalogProductPage {
+  items: CatalogProduct[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 // ---------------------------------------------------------------------------

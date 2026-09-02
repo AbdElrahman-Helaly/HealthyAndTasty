@@ -1,7 +1,12 @@
 import { http } from '@/lib/apiClient';
-import type { CatalogProduct } from '@/types';
+import type { CatalogProduct, CatalogProductPage } from '@/types';
 
-/** GET /api/catalog/products */
-export function listCatalogProducts(): Promise<CatalogProduct[]> {
-  return http.get<CatalogProduct[]>('/api/catalog/products');
+/** GET /api/catalog/products — returns a paged list */
+export async function listCatalogProducts(
+  page = 1,
+  pageSize = 500,
+): Promise<CatalogProduct[]> {
+  const params = { page: String(page), pageSize: String(pageSize) };
+  const result = await http.get<CatalogProductPage>('/api/catalog/products', { params });
+  return result.items ?? [];
 }

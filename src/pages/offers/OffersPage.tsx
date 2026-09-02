@@ -245,7 +245,7 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
           <MultiSelect
             label="المنتجات"
             placeholder="اختر المنتجات..."
-            options={products.map((p) => ({ label: p.productName, value: String(p.id) }))}
+            options={products.map((p) => ({ label: p.name, value: String(p.id) }))}
             value={productIds}
             onChange={setProductIds}
           />
