@@ -12,7 +12,7 @@ export function getOffer(id: string | number): Promise<Offer> {
   return http.get<Offer>(`/api/admin/offers/${encodeURIComponent(String(id))}`);
 }
 
-const XHR_HEADERS = { 'Content-Type': 'multipart/form-data' };
+const FORM_HEADERS = { 'Content-Type': null as unknown as string };
 
 function appendFormValue<T extends Record<string, unknown>>(
   fd: FormData,
@@ -66,7 +66,7 @@ type OfferFormInput = Parameters<typeof buildOfferFormData>[0];
 /** POST /api/admin/offers (multipart) — Admin only */
 export function createOffer(body: OfferFormInput, imageFile?: File): Promise<Offer> {
   return http.post<Offer>('/api/admin/offers', buildOfferFormData(body, imageFile), {
-    headers: XHR_HEADERS,
+    headers: FORM_HEADERS,
   });
 }
 
@@ -77,7 +77,7 @@ export function updateOffer(
   imageFile?: File,
 ): Promise<Offer> {
   return http.put<Offer>(`/api/admin/offers/${encodeURIComponent(String(id))}`, buildOfferFormData(body, imageFile), {
-    headers: XHR_HEADERS,
+    headers: FORM_HEADERS,
   });
 }
 
