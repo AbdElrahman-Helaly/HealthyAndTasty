@@ -557,6 +557,18 @@ export interface AssignUserBranchRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Admin Categories (/api/admin/categories)
+// ---------------------------------------------------------------------------
+
+export interface AdminCategory {
+  id: number;
+  name: string;
+  homeDisplay: boolean;
+  image: string;
+  productsCount: number;
+}
+
+// ---------------------------------------------------------------------------
 // Search (global)
 // ---------------------------------------------------------------------------
 

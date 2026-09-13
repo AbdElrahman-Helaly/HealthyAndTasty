@@ -40,6 +40,9 @@ const ShippingRatesPage = lazy(() =>
 const OffersPage = lazy(() =>
   import('@/pages/offers/OffersPage').then((m) => ({ default: m.OffersPage })),
 );
+const CategoriesPage = lazy(() =>
+  import('@/pages/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
+);
 const ReportsPage = lazy(() =>
   import('@/pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 );
@@ -171,6 +174,14 @@ export default function App() {
               element={
                 <ProtectedRoute requiredRoles={['admin']}>
                   <LazyPage><OffersPage /></LazyPage>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="categories"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'generalmanager']}>
+                  <LazyPage><CategoriesPage /></LazyPage>
                 </ProtectedRoute>
               }
             />

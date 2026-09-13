@@ -8,6 +8,7 @@ const routeNames: Record<string, string> = {
   branches: 'الفروع',
   'shipping-rates': 'أسعار التوصيل',
   offers: 'العروض',
+  categories: 'الفئات',
   employees: 'الموظفين',
   notifications: 'الإشعارات',
   orders: 'الطلبات',

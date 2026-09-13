@@ -242,6 +242,10 @@ export const ar: TranslationKeys = {
     title: 'العروض',
     subtitle: 'إدارة عروض التطبيق والخصومات',
   },
+  adminCategories: {
+    title: 'الفئات',
+    subtitle: 'إدارة فئات المنتجات',
+  },
   settings: {
     title: 'الإعدادات',
     subtitle: 'إعدادات البوابة',

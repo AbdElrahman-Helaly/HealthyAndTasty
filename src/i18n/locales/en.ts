@@ -240,6 +240,10 @@ export const en = {
     title: 'Offers',
     subtitle: 'Manage app offers and discounts',
   },
+  adminCategories: {
+    title: 'Categories',
+    subtitle: 'Manage product categories',
+  },
   settings: {
     title: 'Settings',
     subtitle: 'Portal configuration',
