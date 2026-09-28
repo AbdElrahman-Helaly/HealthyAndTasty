@@ -9,6 +9,7 @@ const routeNames: Record<string, string> = {
   'shipping-rates': 'أسعار التوصيل',
   offers: 'العروض',
   categories: 'الفئات',
+  inventory: 'مخزون المنتجات',
   employees: 'الموظفين',
   notifications: 'الإشعارات',
   orders: 'الطلبات',

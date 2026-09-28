@@ -367,6 +367,40 @@ export interface CatalogProductPage {
 }
 
 // ---------------------------------------------------------------------------
+// Products Inventory (/api/admin/products?branchId=&page=&pageSize=&search=)
+// ---------------------------------------------------------------------------
+
+export interface InventoryProduct {
+  id: number;
+  name: string;
+  image: string;
+  sku: string;
+  categoryName: string;
+  price: number;
+  priceAfterDiscount: number;
+  discount: number;
+  stock: number;
+  isAvailable: boolean;
+  branchId: number | string | null;
+  branchName: string;
+}
+
+export interface InventoryListParams {
+  branchId?: string | number;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryPage {
+  items: InventoryProduct[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// ---------------------------------------------------------------------------
 // Offers (admin)
 // ---------------------------------------------------------------------------
 

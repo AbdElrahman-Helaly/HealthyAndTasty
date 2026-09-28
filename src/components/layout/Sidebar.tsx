@@ -20,6 +20,7 @@ import {
   Truck,
   Tag,
   LayoutGrid,
+  Package,
 } from 'lucide-react';
 import { branding } from '@/config/branding';
 import { cn, getInitials } from '@/lib/utils';
@@ -68,6 +69,7 @@ const moduleStyles: Record<string, ModuleStyle> = {
   '/shipping-rates': { gradient: 'linear-gradient(135deg, #2DD4BF, #0F766E)', shadow: 'rgba(13,148,136,0.35)', color: '#14B8A6' },
   '/offers': { gradient: 'linear-gradient(135deg, #F472B6, #BE185D)', shadow: 'rgba(190,24,93,0.35)', color: '#DB2777' },
   '/categories': { gradient: 'linear-gradient(135deg, #A78BFA, #6D28D9)', shadow: 'rgba(109,40,217,0.35)', color: '#8B5CF6' },
+  '/inventory': { gradient: 'linear-gradient(135deg, #34D399, #0D9488)', shadow: 'rgba(13,148,136,0.35)', color: '#10B981' },
   '/profile': { gradient: 'linear-gradient(135deg, #94A3B8, #475569)', shadow: 'rgba(71,85,105,0.35)', color: '#64748B' },
 };
 
@@ -130,6 +132,7 @@ const navGroups: NavGroup[] = [
         labelKey: 'nav.categories',
         roles: ['admin', 'generalmanager'],
       },
+      { to: '/inventory', icon: Package, labelKey: 'nav.inventory', permission: PERMISSIONS.DashboardView },
     ],
   },
   {

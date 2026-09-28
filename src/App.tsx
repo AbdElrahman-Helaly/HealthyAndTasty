@@ -43,6 +43,9 @@ const OffersPage = lazy(() =>
 const CategoriesPage = lazy(() =>
   import('@/pages/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
 );
+const InventoryPage = lazy(() =>
+  import('@/pages/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })),
+);
 const ReportsPage = lazy(() =>
   import('@/pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 );
@@ -182,6 +185,14 @@ export default function App() {
               element={
                 <ProtectedRoute requiredRoles={['admin', 'generalmanager']}>
                   <LazyPage><CategoriesPage /></LazyPage>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="inventory"
+              element={
+                <ProtectedRoute requiredPermissions={[PERMISSIONS.DashboardView]}>
+                  <LazyPage><InventoryPage /></LazyPage>
                 </ProtectedRoute>
               }
             />

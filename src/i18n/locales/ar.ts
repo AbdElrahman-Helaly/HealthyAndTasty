@@ -20,6 +20,7 @@ export const ar: TranslationKeys = {
     statistics: 'الإحصائيات',
     shippingRates: 'أسعار التوصيل',
     offers: 'العروض',
+    inventory: 'مخزون المنتجات',
     profile: 'الملف الشخصي',
     sectionOrders: 'الطلبات',
     sectionReports: 'التقارير',
@@ -241,6 +242,10 @@ export const ar: TranslationKeys = {
   offers: {
     title: 'العروض',
     subtitle: 'إدارة عروض التطبيق والخصومات',
+  },
+  inventory: {
+    title: 'مخزون المنتجات',
+    subtitle: 'عرض مخزون المنتجات حسب الفرع',
   },
   adminCategories: {
     title: 'الفئات',

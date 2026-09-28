@@ -18,6 +18,7 @@ export const en = {
     statistics: 'Statistics',
     shippingRates: 'Shipping Rates',
     offers: 'Offers',
+    inventory: 'Products Inventory',
     profile: 'Profile',
     sectionOrders: 'Orders',
     sectionReports: 'Reports',
@@ -239,6 +240,10 @@ export const en = {
   offers: {
     title: 'Offers',
     subtitle: 'Manage app offers and discounts',
+  },
+  inventory: {
+    title: 'Products Inventory',
+    subtitle: 'Browse products stock by branch',
   },
   adminCategories: {
     title: 'Categories',
