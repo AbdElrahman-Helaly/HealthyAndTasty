@@ -1,4 +1,4 @@
-import { http } from '@/lib/apiClient';
+import { http, ApiError } from '@/lib/apiClient';
 import type { InventoryListParams, InventoryPage, InventoryProduct } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -118,8 +118,11 @@ export async function listInventoryProducts(
     if (search) query.search = search;
     const payload = await http.get<unknown>('/api/admin/products', { params: query });
     return normalizePage(payload, { page, pageSize }, fallbackBranchName);
-  } catch {
-    // fall through to catalog fallback
+  } catch (err) {
+    // Fall back to catalog ONLY when the admin endpoint doesn't exist (404).
+    // Any other failure (400/500 — e.g. bad branchId) must surface instead of
+    // silently showing unfiltered data that looks like "filter not working".
+    if (!(err instanceof ApiError) || err.status !== 404) throw err;
   }
 
   // 2) Fallback: public catalog endpoint (no branch support) + client-side filtering

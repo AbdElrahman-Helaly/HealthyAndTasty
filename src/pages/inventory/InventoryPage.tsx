@@ -50,9 +50,19 @@ export function InventoryPage() {
   const [error, setError] = useState('');
   usePageTitle(t('inventory.title'));
 
+  // /api/admin/products?branchId= expects the numeric branch id (int32),
+  // i.e. odooBranchId — NOT the string admin id. Match either to be safe.
+  const findBranch = useCallback(
+    (value: string | number | null | undefined) =>
+      branches.find(
+        (b) => String(b.odooBranchId) === String(value) || String(b.id) === String(value),
+      ),
+    [branches],
+  );
+
   const selectedBranch = useMemo(
-    () => branches.find((b) => String(b.id) === String(branchId)),
-    [branches, branchId],
+    () => (branchId ? findBranch(branchId) : undefined),
+    [branches, branchId, findBranch],
   );
 
   const loadBranches = useCallback(async () => {
@@ -80,21 +90,16 @@ export function InventoryPage() {
             branchId: opts.branchId || undefined,
             search: opts.search || undefined,
           },
-          opts.branchId
-            ? branches.find((b) => String(b.id) === String(opts.branchId))?.name ?? ''
-            : '',
+          opts.branchId ? (findBranch(opts.branchId)?.name ?? '') : '',
         );
         // Enrich branchName when backend doesn't return it (catalog fallback)
         const enriched = res.items.map((item) => {
           if (item.branchName) return item;
           if (opts.branchId) {
-            const name =
-              branches.find((b) => String(b.id) === String(opts.branchId))?.name ?? '';
+            const name = findBranch(opts.branchId)?.name ?? '';
             return { ...item, branchId: opts.branchId, branchName: name };
           }
-          const byId = item.branchId
-            ? branches.find((b) => String(b.id) === String(item.branchId))?.name
-            : undefined;
+          const byId = item.branchId ? findBranch(item.branchId)?.name : undefined;
           return byId ? { ...item, branchName: byId } : item;
         });
         setRows(enriched);
@@ -107,7 +112,7 @@ export function InventoryPage() {
         setLoading(false);
       }
     },
-    [branches],
+    [findBranch],
   );
 
   useEffect(() => {
@@ -305,7 +310,7 @@ export function InventoryPage() {
           >
             <option value="">كل الفروع</option>
             {branches.map((b) => (
-              <option key={b.id} value={b.id}>
+              <option key={b.id} value={String(b.odooBranchId ?? b.id)}>
                 {b.name}
               </option>
             ))}
