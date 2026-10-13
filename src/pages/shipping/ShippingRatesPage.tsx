@@ -68,10 +68,10 @@ interface RateFormModalProps {
 function RateFormModal({ open, rate, branches, onClose, onSaved }: RateFormModalProps) {
   const { show: showToast } = useToast();
   const [branchId, setBranchId] = useState('');
-  const [minDistanceMeter, setMinDistanceMeter] = useState('');
-  const [maxDistanceMeter, setMaxDistanceMeter] = useState('');
+  const [minDistanceKm, setMinDistanceKm] = useState('');
+  const [maxDistanceKm, setMaxDistanceKm] = useState('');
   const [baseFee, setBaseFee] = useState('');
-  const [pricePerMeter, setPricePerMeter] = useState('');
+  const [pricePerKm, setPricePerKm] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -79,10 +79,10 @@ function RateFormModal({ open, rate, branches, onClose, onSaved }: RateFormModal
   useEffect(() => {
     if (!open) return;
     setBranchId(rate?.branchId ?? '');
-    setMinDistanceMeter(rate ? String(rate.minDistanceMeter) : '');
-    setMaxDistanceMeter(rate ? String(rate.maxDistanceMeter) : '');
+    setMinDistanceKm(rate ? String(rate.minDistanceKm) : '');
+    setMaxDistanceKm(rate ? String(rate.maxDistanceKm) : '');
     setBaseFee(rate ? String(rate.baseFee) : '');
-    setPricePerMeter(rate ? String(rate.pricePerMeter) : '');
+    setPricePerKm(rate ? String(rate.pricePerKm) : '');
     setIsActive(rate?.isActive ?? true);
     setErrors({});
   }, [open, rate]);
@@ -90,16 +90,16 @@ function RateFormModal({ open, rate, branches, onClose, onSaved }: RateFormModal
   const handleSubmit = async () => {
     const nextErrors: Record<string, string> = {};
     if (!branchId) nextErrors.branchId = 'الفرع مطلوب';
-    const min = parseFloat(minDistanceMeter);
-    const max = parseFloat(maxDistanceMeter);
+    const min = parseFloat(minDistanceKm);
+    const max = parseFloat(maxDistanceKm);
     const fee = parseFloat(baseFee);
-    const price = parseFloat(pricePerMeter);
-    if (Number.isNaN(min) || min < 0) nextErrors.minDistanceMeter = 'من يجب أن تكون قيمة أكبر من أو تساوي 0';
-    if (Number.isNaN(max)) nextErrors.maxDistanceMeter = 'إلى مطلوبة';
+    const price = parseFloat(pricePerKm);
+    if (Number.isNaN(min) || min < 0) nextErrors.minDistanceKm = 'من يجب أن تكون قيمة أكبر من أو تساوي 0';
+    if (Number.isNaN(max)) nextErrors.maxDistanceKm = 'إلى مطلوبة';
     if (!Number.isNaN(min) && !Number.isNaN(max) && max <= min)
-      nextErrors.maxDistanceMeter = 'إلى يجب أن تكون أكبر من من';
+      nextErrors.maxDistanceKm = 'إلى يجب أن تكون أكبر من من';
     if (Number.isNaN(fee) || fee < 0) nextErrors.baseFee = 'الرسوم الأساسية يجب أن تكون أكبر من أو تساوي 0';
-    if (Number.isNaN(price) || price < 0) nextErrors.pricePerMeter = 'سعر المتر يجب أن يكون أكبر من أو يساوي 0';
+    if (Number.isNaN(price) || price < 0) nextErrors.pricePerKm = 'سعر الكيلومتر يجب أن يكون أكبر من أو يساوي 0';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -107,10 +107,10 @@ function RateFormModal({ open, rate, branches, onClose, onSaved }: RateFormModal
     try {
       const body = {
         branchId,
-        minDistanceMeter: min,
-        maxDistanceMeter: max,
+        minDistanceKm: min,
+        maxDistanceKm: max,
         baseFee: fee,
-        pricePerMeter: price,
+        pricePerKm: price,
         isActive,
       };
       const saved = rate
@@ -149,44 +149,47 @@ function RateFormModal({ open, rate, branches, onClose, onSaved }: RateFormModal
         </Select>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="من (متر)"
+            label="من (كم)"
             type="number"
             min={0}
             step="any"
             placeholder="0"
-            value={minDistanceMeter}
-            onChange={(e) => setMinDistanceMeter(e.target.value)}
-            error={errors.minDistanceMeter}
+            value={minDistanceKm}
+            onChange={(e) => setMinDistanceKm(e.target.value)}
+            error={errors.minDistanceKm}
           />
           <Input
-            label="إلى (متر)"
+            label="إلى (كم)"
             type="number"
             min={0}
             step="any"
-            placeholder="3000"
-            value={maxDistanceMeter}
-            onChange={(e) => setMaxDistanceMeter(e.target.value)}
-            error={errors.maxDistanceMeter}
+            placeholder="5"
+            value={maxDistanceKm}
+            onChange={(e) => setMaxDistanceKm(e.target.value)}
+            error={errors.maxDistanceKm}
           />
+          <div className="flex flex-col gap-1.5">
+            <Input
+              label="الرسوم الأساسية"
+              type="number"
+              min={0}
+              step="any"
+              placeholder="10"
+              value={baseFee}
+              onChange={(e) => setBaseFee(e.target.value)}
+              error={errors.baseFee}
+            />
+            <p className="text-xs text-on-surface-variant/70">رقم ثابت بيتحسب مع الأوردر.</p>
+          </div>
           <Input
-            label="الرسوم الأساسية"
+            label="سعر الكيلومتر"
             type="number"
             min={0}
             step="any"
-            placeholder="15"
-            value={baseFee}
-            onChange={(e) => setBaseFee(e.target.value)}
-            error={errors.baseFee}
-          />
-          <Input
-            label="سعر المتر"
-            type="number"
-            min={0}
-            step="any"
-            placeholder="0.002"
-            value={pricePerMeter}
-            onChange={(e) => setPricePerMeter(e.target.value)}
-            error={errors.pricePerMeter}
+            placeholder="4"
+            value={pricePerKm}
+            onChange={(e) => setPricePerKm(e.target.value)}
+            error={errors.pricePerKm}
           />
         </div>
         <div className="flex items-center justify-between rounded-2xl border border-outline-variant bg-surface-container px-4 py-3">
@@ -270,8 +273,15 @@ export function ShippingRatesPage() {
 
   const handleToggle = async (rate: ShippingRate) => {
     try {
-      const updated = await updateShippingRate(rate.id, { isActive: !rate.isActive });
-      setRates((prev) => prev.map((r) => (r.id === rate.id ? { ...r, isActive: updated.isActive } : r)));
+      const updated = await updateShippingRate(rate.id, {
+        branchId: rate.branchId,
+        minDistanceKm: rate.minDistanceKm,
+        maxDistanceKm: rate.maxDistanceKm,
+        baseFee: rate.baseFee,
+        pricePerKm: rate.pricePerKm,
+        isActive: !rate.isActive,
+      });
+      setRates((prev) => prev.map((r) => (r.id === rate.id ? updated : r)));
       showToast('تم التحديث بنجاح', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'فشل التحديث', 'error');
@@ -308,20 +318,20 @@ export function ShippingRatesPage() {
         ),
       },
       {
-        key: 'minDistanceMeter',
-        header: 'من (متر)',
+        key: 'minDistanceKm',
+        header: 'من (كم)',
         render: (row) => (
           <span className="font-mono text-sm text-on-surface-variant/90">
-            {Number(row.minDistanceMeter).toLocaleString('en-US')}
+            {Number(row.minDistanceKm).toLocaleString('en-US')}
           </span>
         ),
       },
       {
-        key: 'maxDistanceMeter',
-        header: 'إلى (متر)',
+        key: 'maxDistanceKm',
+        header: 'إلى (كم)',
         render: (row) => (
           <span className="font-mono text-sm text-on-surface-variant/90">
-            {Number(row.maxDistanceMeter).toLocaleString('en-US')}
+            {Number(row.maxDistanceKm).toLocaleString('en-US')}
           </span>
         ),
       },
@@ -331,11 +341,11 @@ export function ShippingRatesPage() {
         render: (row) => <span className="font-mono text-sm font-semibold text-on-surface">{formatCurrency(row.baseFee)}</span>,
       },
       {
-        key: 'pricePerMeter',
-        header: 'سعر المتر',
+        key: 'pricePerKm',
+        header: 'سعر الكيلومتر',
         render: (row) => (
           <span className="font-mono text-sm text-on-surface-variant/90">
-            {Number(row.pricePerMeter).toLocaleString('en-US', { maximumFractionDigits: 4 })} ر.س/م
+            {Number(row.pricePerKm).toLocaleString('en-US', { maximumFractionDigits: 4 })} ر.س/كم
           </span>
         ),
       },
@@ -463,7 +473,7 @@ export function ShippingRatesPage() {
         onClose={() => setDeletingRate(null)}
         onConfirm={() => void handleDelete()}
         title="حذف الشريحة"
-        message={`هل أنت متأكد من حذف شريحة "${deletingRate?.branchName ?? ''}" (${deletingRate ? `${deletingRate.minDistanceMeter} - ${deletingRate.maxDistanceMeter} متر` : ''})؟ لا يمكن التراجع.`}
+        message={`هل أنت متأكد من حذف شريحة "${deletingRate?.branchName ?? ''}" (${deletingRate ? `${deletingRate.minDistanceKm} - ${deletingRate.maxDistanceKm} كم` : ''})؟ لا يمكن التراجع.`}
         loading={deleting}
       />
     </div>

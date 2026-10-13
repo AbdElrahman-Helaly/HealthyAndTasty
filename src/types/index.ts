@@ -299,12 +299,21 @@ export interface BranchAdmin {
 }
 
 export interface UpdateBranchRequest {
-  name?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  deliveryRadiusKm?: number;
-  isActive?: boolean;
+  latitude: number;
+  longitude: number;
+  deliveryRadiusKm: number;
+  address: string;
+  isActive: boolean;
+}
+
+export interface CreateBranchRequest {
+  odooBranchId: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  deliveryRadiusKm: number;
+  address: string;
+  isActive: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,29 +324,29 @@ export interface ShippingRate {
   id: string;
   branchId: string;
   branchName: string;
-  minDistanceMeter: number;
-  maxDistanceMeter: number;
+  minDistanceKm: number;
+  maxDistanceKm: number;
   baseFee: number;
-  pricePerMeter: number;
+  pricePerKm: number;
   isActive: boolean;
 }
 
 export interface CreateShippingRateRequest {
   branchId: string;
-  minDistanceMeter: number;
-  maxDistanceMeter: number;
+  minDistanceKm: number;
+  maxDistanceKm: number;
   baseFee: number;
-  pricePerMeter: number;
+  pricePerKm: number;
   isActive: boolean;
 }
 
 /** PUT body — every field is optional */
 export interface UpdateShippingRateRequest {
   branchId?: string;
-  minDistanceMeter?: number;
-  maxDistanceMeter?: number;
+  minDistanceKm?: number;
+  maxDistanceKm?: number;
   baseFee?: number;
-  pricePerMeter?: number;
+  pricePerKm?: number;
   isActive?: boolean;
 }
 
