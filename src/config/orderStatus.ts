@@ -24,5 +24,5 @@ export function orderStatusConfig(status: OrderStatusNumber): OrderStatusConfig 
 }
 
 export function formatCurrency(n: number): string {
-  return `${n.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س`;
+  return `${n.toLocaleString('en-US', { maximumFractionDigits: 2 })} ج.م`;
 }

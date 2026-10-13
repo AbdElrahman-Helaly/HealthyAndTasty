@@ -150,14 +150,14 @@ export function StatisticsPage() {
 
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="الإيرادات الإجمالية" value={`${fmt(data.totalRevenue)} ر.س`} icon={<DollarSign className="h-5 w-5" />} iconColor={C.green} comparisonText="ر.س" index={0} />
+          <StatCard label="الإيرادات الإجمالية" value={`${fmt(data.totalRevenue)} ج.م`} icon={<DollarSign className="h-5 w-5" />} iconColor={C.green} comparisonText="ج.م" index={0} />
           <StatCard label="إجمالي الطلبات" value={data.totalOrders.toLocaleString()} icon={<ShoppingCart className="h-5 w-5" />} iconColor={C.blue} comparisonText={`${data.todayOrders} اليوم`} index={1} />
           <StatCard label="إجمالي العملاء" value={data.totalCustomers.toLocaleString()} icon={<Users className="h-5 w-5" />} iconColor={C.primary} index={2} />
-          <StatCard label="متوسط قيمة الطلب" value={`${fmt(data.averageOrderValue)} ر.س`} icon={<ReceiptText className="h-5 w-5" />} iconColor={C.orange} index={3} />
+          <StatCard label="متوسط قيمة الطلب" value={`${fmt(data.averageOrderValue)} ج.م`} icon={<ReceiptText className="h-5 w-5" />} iconColor={C.orange} index={3} />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="إيرادات اليوم" value={`${fmt(data.todayRevenue)} ر.س`} icon={<Wallet className="h-5 w-5" />} iconColor={C.purple} comparisonText="اليوم" index={0} />
+          <StatCard label="إيرادات اليوم" value={`${fmt(data.todayRevenue)} ج.م`} icon={<Wallet className="h-5 w-5" />} iconColor={C.purple} comparisonText="اليوم" index={0} />
           <StatCard label="قيد الانتظار" value={data.pendingOrders.toLocaleString()} icon={<Clock className="h-5 w-5" />} iconColor={C.orange} index={1} />
           <StatCard label="قيد التنفيذ" value={data.inProgressOrders.toLocaleString()} icon={<ShoppingCart className="h-5 w-5" />} iconColor={C.blue} index={2} />
           <StatCard label="تم التوصيل" value={data.deliveredOrders.toLocaleString()} icon={<CheckCircle2 className="h-5 w-5" />} iconColor={C.green} index={3} />
@@ -192,7 +192,7 @@ export function StatisticsPage() {
                     <div key={b.branchId}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-semibold text-on-surface">{b.branchName}</span>
-                        <span className="text-xs font-bold text-on-surface-variant">{fmt(b.revenue)} ر.س</span>
+                        <span className="text-xs font-bold text-on-surface-variant">{fmt(b.revenue)} ج.م</span>
                       </div>
                       <div className="relative h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
                         <motion.div
@@ -257,7 +257,7 @@ export function StatisticsPage() {
                         </div>
                       </td>
                       <td className="py-3.5 px-3 text-on-surface-variant/70">{p.quantity.toLocaleString()}</td>
-                      <td className="py-3.5 px-3 font-semibold text-on-surface">{fmt(p.revenue)} ر.س</td>
+                      <td className="py-3.5 px-3 font-semibold text-on-surface">{fmt(p.revenue)} ج.م</td>
                     </tr>
                   ))}
                 </tbody>

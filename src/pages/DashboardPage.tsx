@@ -110,7 +110,7 @@ function TopProductsTable({ products }: { products: DashboardStatistics['topProd
                 </div>
               </td>
               <td className="py-3.5 px-3 text-sm text-on-surface-variant/70">{p.quantity.toLocaleString()}</td>
-              <td className="py-3.5 px-3 text-sm font-semibold text-on-surface">{fmt(p.revenue)} ر.س</td>
+              <td className="py-3.5 px-3 text-sm font-semibold text-on-surface">{fmt(p.revenue)} ج.م</td>
             </motion.tr>
           ))}
         </tbody>
@@ -136,7 +136,7 @@ function BranchBars({ branches }: { branches: DashboardStatistics['revenueByBran
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: branchColors[i % branchColors.length] }} />
                 <span className="text-sm font-semibold text-on-surface">{b.branchName}</span>
               </div>
-              <span className="text-xs font-bold text-on-surface-variant">{fmt(b.revenue)} ر.س</span>
+              <span className="text-xs font-bold text-on-surface-variant">{fmt(b.revenue)} ج.م</span>
             </div>
             <div className="relative h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
               <motion.div
@@ -300,7 +300,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="الإيرادات الإجمالية"
-          value={`${fmt(data.totalRevenue)} ر.س`}
+          value={`${fmt(data.totalRevenue)} ج.م`}
           icon={<DollarSign className="h-5 w-5" />}
           iconColor={C.green}
           comparisonText="كل الفترات"
@@ -308,7 +308,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="إيرادات اليوم"
-          value={`${fmt(data.todayRevenue)} ر.س`}
+          value={`${fmt(data.todayRevenue)} ج.م`}
           icon={<Wallet className="h-5 w-5" />}
           iconColor={C.blue}
           comparisonText="آخر 24 ساعة"
@@ -324,7 +324,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="متوسط قيمة الطلب"
-          value={`${fmt(data.averageOrderValue)} ر.س`}
+          value={`${fmt(data.averageOrderValue)} ج.م`}
           icon={<ReceiptText className="h-5 w-5" />}
           iconColor={C.orange}
           comparisonText="لكل طلب"

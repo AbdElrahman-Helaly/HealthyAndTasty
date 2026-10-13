@@ -227,14 +227,14 @@ export function ReportsPage() {
                 />
                 <StatCard
                   label="إجمالي الإيرادات"
-                  value={`${fmt(sales.totalRevenue)} ر.س`}
+                  value={`${fmt(sales.totalRevenue)} ج.م`}
                   icon={<Wallet className="h-5 w-5" />}
                   iconColor={C.green}
                   index={1}
                 />
                 <StatCard
                   label="متوسط قيمة الطلب"
-                  value={`${fmt(sales.averageOrderValue)} ر.س`}
+                  value={`${fmt(sales.averageOrderValue)} ج.م`}
                   icon={<TrendingUp className="h-5 w-5" />}
                   iconColor={C.primary}
                   index={2}
@@ -267,7 +267,7 @@ export function ReportsPage() {
                         <tr key={b.branchId} className="border-b border-gray-50 hover:bg-primary-surface/30 transition-colors">
                           <td className="py-3.5 px-3 font-medium text-on-surface">{b.branchName}</td>
                           <td className="py-3.5 px-3 text-on-surface-variant/70">{b.ordersCount}</td>
-                          <td className="py-3.5 px-3 font-semibold text-on-surface">{fmt(b.revenue)} ر.س</td>
+                          <td className="py-3.5 px-3 font-semibold text-on-surface">{fmt(b.revenue)} ج.م</td>
                         </tr>
                       ))}
                       {sales.byBranch.length === 0 && (

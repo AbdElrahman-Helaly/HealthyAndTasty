@@ -345,7 +345,7 @@ export function ShippingRatesPage() {
         header: 'سعر الكيلومتر',
         render: (row) => (
           <span className="font-mono text-sm text-on-surface-variant/90">
-            {Number(row.pricePerKm).toLocaleString('en-US', { maximumFractionDigits: 4 })} ر.س/كم
+            {Number(row.pricePerKm).toLocaleString('en-US', { maximumFractionDigits: 4 })} ج.م/كم
           </span>
         ),
       },
