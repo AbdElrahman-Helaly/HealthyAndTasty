@@ -50,7 +50,7 @@ export function MultiSelect({ label, options, value, onChange, placeholder, sear
             if (isOpen) setQuery('');
           }}
         >
-          {value.length > 0 ? `${value.length} selected` : (placeholder || 'Select...')}
+          {value.length > 0 ? value.map(item => options.find(option => option.value === item)?.label ?? item).join('، ') : (placeholder || 'Select...')}
         </div>
         {isOpen && (
           <div className="absolute z-10 mt-1 w-full rounded-xl border border-outline-variant/40 bg-surface shadow-lg">

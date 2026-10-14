@@ -1,4 +1,12 @@
 import { http } from '@/lib/apiClient';
+
+export function changeEmployeePassword(id: number, newPassword: string): Promise<unknown> {
+  return http.put(`/api/dashboard/employees/${id}/password`, { newPassword });
+}
+
+export function deleteEmployee(id: number): Promise<unknown> {
+  return http.delete(`/api/dashboard/employees/${id}`);
+}
 import type {
   AssignBranchesRequest,
   AssignRoleRequest,

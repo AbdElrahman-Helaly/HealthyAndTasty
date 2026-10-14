@@ -1,4 +1,12 @@
 import { http } from '@/lib/apiClient';
+
+export type BulkShippingRatesRequest = {
+  bands: { minDistanceKm: number; maxDistanceKm: number; fee: number }[];
+} & ({ allBranches: true } | { allBranches: false; branchIds: string[] });
+
+export function createBulkShippingRates(body: BulkShippingRatesRequest): Promise<unknown> {
+  return http.post('/api/admin/shipping-rates/bulk', body);
+}
 import type {
   CreateShippingRateRequest,
   ShippingRate,

@@ -22,6 +22,7 @@ import type { BranchAdmin, ShippingRate } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
+import { BulkShippingRatesModal } from './BulkShippingRatesModal';
 
 const MANAGER_ROLES = ['admin', 'generalmanager'];
 
@@ -221,6 +222,7 @@ export function ShippingRatesPage() {
   const [branchFilter, setBranchFilter] = useState('');
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<ShippingRate | null>(null);
   const [deletingRate, setDeletingRate] = useState<ShippingRate | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -337,15 +339,15 @@ export function ShippingRatesPage() {
       },
       {
         key: 'baseFee',
-        header: 'الرسوم الأساسية',
-        render: (row) => <span className="font-mono text-sm font-semibold text-on-surface">{formatCurrency(row.baseFee)}</span>,
+        header: 'سعر الشحن / الرسوم الأساسية',
+        render: (row) => <span className="font-mono text-sm font-semibold text-on-surface">{formatCurrency(row.fee ?? row.baseFee)}</span>,
       },
       {
         key: 'pricePerKm',
         header: 'سعر الكيلومتر',
         render: (row) => (
           <span className="font-mono text-sm text-on-surface-variant/90">
-            {Number(row.pricePerKm).toLocaleString('en-US', { maximumFractionDigits: 4 })} ج.م/كم
+            {row.fee !== undefined || row.pricePerKm === 0 ? 'سعر ثابت داخل الشريحة' : `${Number(row.pricePerKm).toLocaleString('en-US', { maximumFractionDigits: 4 })} ج.م/كم`}
           </span>
         ),
       },
@@ -408,12 +410,11 @@ export function ShippingRatesPage() {
                 size="sm"
                 className="gap-1.5"
                 onClick={() => {
-                  setEditingRate(null);
-                  setModalOpen(true);
+                  setBulkOpen(true);
                 }}
               >
                 <Plus className="h-4 w-4" />
-                إضافة شريحة
+                إضافة شرايح بسعر ثابت
               </Button>
             )}
             <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => void load()}>
@@ -459,6 +460,16 @@ export function ShippingRatesPage() {
           />
         )}
       </Card>
+
+      {bulkOpen && canManage && <BulkShippingRatesModal
+        branches={branches}
+        onClose={() => setBulkOpen(false)}
+        onSaved={() => {
+          setBulkOpen(false);
+          showToast('تمت إضافة شرايح الشحن بنجاح', 'success');
+          void load();
+        }}
+      />}
 
       <RateFormModal
         open={modalOpen}

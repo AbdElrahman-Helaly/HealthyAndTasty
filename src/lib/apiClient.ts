@@ -180,7 +180,6 @@ client.interceptors.response.use(
       body &&
       typeof body === 'object' &&
       'success' in body &&
-      'data' in body &&
       'message' in body
     ) {
       const envelope = body as ApiResponse<unknown>;

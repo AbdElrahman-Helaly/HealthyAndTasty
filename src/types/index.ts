@@ -321,6 +321,7 @@ export interface CreateBranchRequest {
 // ---------------------------------------------------------------------------
 
 export interface ShippingRate {
+  fee?: number;
   id: string;
   branchId: string;
   branchName: string;

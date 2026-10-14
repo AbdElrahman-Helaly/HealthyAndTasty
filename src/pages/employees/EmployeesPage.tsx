@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Search, UserPlus, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Search, UserPlus, KeyRound, CheckCircle2, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
@@ -23,6 +23,9 @@ import { PERMISSIONS } from '@/types/permissions';
 import type { BranchAdmin, Employee, RoleDto } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/context/AuthContext';
+import { usePermissionContext } from '@/context/PermissionContext';
+import { EmployeeActionModal } from './EmployeeActionModal';
 
 const PAGE_SIZE = 12;
 
@@ -44,6 +47,10 @@ export function EmployeesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { show: showToast } = useToast();
+  const { user, assignedBranches } = useAuth();
+  const { hasPermission } = usePermissionContext();
+  const [actionTarget, setActionTarget] = useState<{ employee: Employee; action: 'password' | 'delete' } | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [rows, setRows] = useState<Employee[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
@@ -72,7 +79,17 @@ export function EmployeesPage() {
     setError('');
     try {
       const res = await listEmployees({ page: p, pageSize: PAGE_SIZE, search: q || undefined });
+      const lastPage = Math.max(1, res.totalPages);
+      if (p > lastPage) {
+        const previous = await listEmployees({ page: lastPage, pageSize: PAGE_SIZE, search: q || undefined });
+        setRows(previous.items);
+        setTotalPages(Math.max(1, previous.totalPages));
+        setTotalCount(previous.totalCount);
+        setPage(lastPage);
+        return;
+      }
       setRows(res.items);
+      setTotalCount(res.totalCount);
       setTotalPages(Math.max(1, res.totalPages));
       setPage(p);
     } catch (err) {
@@ -126,6 +143,21 @@ export function EmployeesPage() {
       setIsCreating(false);
     }
   }
+
+  const canManageEmployee = useCallback((employee: Employee) => {
+    if (!user || String(employee.id) === String(user.id)) return false;
+    const role = user.role.toLowerCase();
+    const targetRole = employee.role.toLowerCase();
+    if (role === 'admin') return true;
+    if (role === 'generalmanager') return !['admin', 'generalmanager'].includes(targetRole);
+    if (role !== 'branchmanager' || targetRole !== 'branchemployee') return false;
+    if (!Array.isArray(employee.branchIds)) return false;
+    const managerBranches = new Set(assignedBranches.map(branch => branch.branchId));
+    return employee.branchIds.every(id => {
+      const branch = branches.find(item => item.id === id);
+      return !!branch && (!branch.isActive || managerBranches.has(id));
+    });
+  }, [user, assignedBranches, branches]);
 
   const columns = useMemo<Column<Employee>[]>(
     () => [
@@ -181,8 +213,16 @@ export function EmployeesPage() {
         header: 'تاريخ الإنشاء',
         render: (e) => <span className="text-xs text-on-surface-variant/60">{formatDate(e.createdAt)}</span>,
       },
+      {
+        key: 'actions',
+        header: 'إجراءات',
+        render: employee => canManageEmployee(employee) ? <div className="flex items-center gap-1" onClick={event => event.stopPropagation()}>
+          {hasPermission(PERMISSIONS.EmployeesUpdate) && <Button variant="ghost" size="icon" title="تغيير الباسورد" aria-label={`تغيير الباسورد: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'password' })}><KeyRound className="h-4 w-4" /></Button>}
+          {hasPermission(PERMISSIONS.EmployeesDeactivate) && <Button variant="ghost" size="icon" className="text-error" title="حذف الموظف" aria-label={`حذف الموظف: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'delete' })}><Trash2 className="h-4 w-4" /></Button>}
+        </div> : null,
+      },
     ],
-    [],
+    [canManageEmployee, hasPermission],
   );
 
   return (
@@ -232,11 +272,24 @@ export function EmployeesPage() {
               emptyMessage="لا يوجد موظفون"
             />
             <div className="px-4 pb-4">
+              <p className="mb-2 text-sm text-on-surface-variant">عدد الموظفين: {totalCount}</p>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={(p) => void load(p, search)} />
             </div>
           </>
         )}
       </Card>
+
+      {actionTarget && <EmployeeActionModal
+        key={`${actionTarget.employee.id}-${actionTarget.action}`}
+        employee={actionTarget.employee}
+        action={actionTarget.action}
+        onClose={() => setActionTarget(null)}
+        onSuccess={() => {
+          showToast(actionTarget.action === 'password' ? 'تم تغيير الباسورد بنجاح' : 'تم حذف الموظف بنجاح', 'success');
+          if (actionTarget.action === 'delete') void load(page, search);
+          setActionTarget(null);
+        }}
+      />}
 
       {/* Create employee drawer */}
       <FormDrawer
