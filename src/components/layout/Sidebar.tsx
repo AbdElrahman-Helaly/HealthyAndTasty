@@ -145,6 +145,7 @@ const navGroups: NavGroup[] = [
   {
     labelKey: 'nav.sectionMarketing',
     items: [
+      { to: '/banners', icon: LayoutGrid, labelKey: 'nav.banners', roles: ['admin', 'generalmanager'] },
       { to: '/notifications', icon: BellRing, labelKey: 'nav.notifications', permission: PERMISSIONS.NotificationsSend },
     ],
   },
