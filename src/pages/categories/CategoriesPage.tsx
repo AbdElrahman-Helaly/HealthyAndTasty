@@ -1,3 +1,4 @@
+import { ApiImage } from '@/components/ui/ApiImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, RefreshCw, LayoutGrid, Home } from 'lucide-react';
@@ -177,7 +178,7 @@ function AddCategoryModal({ open, onClose, onSaved }: AddModalProps) {
           <div className="flex items-center gap-4">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container">
               {preview ? (
-                <img src={preview} alt="معاينة" className="h-full w-full object-cover" />
+                <ApiImage src={preview} alt="معاينة" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs text-on-surface-variant/60">بدون صورة</span>
               )}
@@ -323,7 +324,7 @@ function EditCategoryModal({ open, category, onClose, onSaved }: EditModalProps)
           <div className="flex items-center gap-4">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container">
               {preview ? (
-                <img src={preview} alt="معاينة" className="h-full w-full object-cover" />
+                <ApiImage src={preview} alt="معاينة" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs text-on-surface-variant/60">بدون صورة</span>
               )}
@@ -445,7 +446,7 @@ export function CategoriesPage() {
         render: (row) => (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-surface text-primary">
             {row.image ? (
-              <img src={row.image} alt={row.name} className="h-full w-full object-cover" loading="lazy" />
+              <ApiImage src={row.image} alt={row.name} className="h-full w-full object-cover" loading="lazy" />
             ) : (
               <LayoutGrid className="h-5 w-5" />
             )}

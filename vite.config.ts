@@ -13,6 +13,10 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      '/uploads': {
+        target: 'http://197.44.196.138',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://197.44.196.138',
         changeOrigin: true,

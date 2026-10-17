@@ -1,3 +1,4 @@
+import { ApiImage } from '@/components/ui/ApiImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -203,7 +204,7 @@ export function OrderDetailsPage() {
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-3">
                           {item.image ? (
-                            <img src={item.image} alt={item.productName} className="h-10 w-10 rounded-lg object-cover" />
+                            <ApiImage src={item.image} alt={item.productName} className="h-10 w-10 rounded-lg object-cover" />
                           ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-surface text-primary">
                               <Package className="h-4 w-4" />

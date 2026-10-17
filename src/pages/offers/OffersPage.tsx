@@ -1,3 +1,4 @@
+import { ApiImage } from '@/components/ui/ApiImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, RefreshCw, Tag } from 'lucide-react';
@@ -210,7 +211,7 @@ function OfferFormModal({ open, offer, branches, products, onClose, onSaved }: O
             <div className="flex items-center gap-4">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container">
                 {imagePreview ? (
-                  <img src={imagePreview} alt="معاينة" className="h-full w-full object-cover" />
+                  <ApiImage src={imagePreview} alt="معاينة" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-xs text-on-surface-variant/60">بدون صورة</span>
                 )}
@@ -396,7 +397,7 @@ export function OffersPage() {
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-surface text-primary">
               {row.image ? (
-                <img src={row.image} alt={row.title} className="h-full w-full object-cover" />
+                <ApiImage src={row.image} alt={row.title} className="h-full w-full object-cover" />
               ) : (
                 <Tag className="h-4 w-4" />
               )}

@@ -21,15 +21,12 @@ import { listBranches } from '@/api/branches.api';
 import { listInventoryProducts } from '@/api/inventory.api';
 import type { BranchAdmin, InventoryProduct } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { env } from '@/config/env';
+import { ApiImage, resolveImageUrl } from '@/components/ui/ApiImage';
 
 const PAGE_SIZE = 20;
 
 function resolveImage(src: string): string {
-  if (!src) return '';
-  if (/^https?:\/\//i.test(src) || src.startsWith('data:') || src.startsWith('blob:')) return src;
-  if (src.startsWith('/')) return `${env.apiBaseUrl}${src}`;
-  return `${env.apiBaseUrl}/${src}`;
+  return resolveImageUrl(src);
 }
 
 function formatPrice(value: number): string {
@@ -147,14 +144,11 @@ export function InventoryPage() {
           return (
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-surface text-primary">
               {src ? (
-                <img
+                <ApiImage
                   src={src}
                   alt={p.name}
                   loading="lazy"
                   className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
                 />
               ) : (
                 <ImageOff className="h-4 w-4" />
