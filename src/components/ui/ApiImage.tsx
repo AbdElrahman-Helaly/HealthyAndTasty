@@ -6,12 +6,23 @@ import { cn } from '@/lib/utils';
 export function resolveImageUrl(value?: string | null): string {
   const path = value?.trim().replace(/\\/g, '/') ?? '';
   if (!path || ['string', 'null', 'undefined'].includes(path.toLowerCase())) return '';
-  if (/^(https?:\/\/|blob:|data:image\/)/i.test(path)) return path;
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      const remote = new URL(path);
+      if (remote.hostname === '197.44.196.138') {
+        return `/backend-media${remote.pathname}${remote.search}`;
+      }
+      return path;
+    } catch { return ''; }
+  }
+  if (/^(blob:|data:image\/)/i.test(path)) return path;
   if (path.startsWith('//')) return `${window.location.protocol}${path}`;
   if (/^[a-z][a-z\d+.-]*:/i.test(path)) return '';
   try {
     const base = new URL(env.apiBaseUrl || '/', window.location.origin);
-    return new URL(path.replace(/^\.?\//, ''), `${base.origin}/`).href;
+    const relative = path.replace(/^\.?\//, '');
+    if (!env.apiBaseUrl || base.hostname === '197.44.196.138') return `/backend-media/${relative}`;
+    return new URL(relative, `${base.origin}/`).href;
   } catch {
     return '';
   }

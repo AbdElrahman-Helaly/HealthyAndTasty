@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      '/backend-media': {
+        target: 'http://197.44.196.138',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/backend-media/, ''),
+      },
       '/uploads': {
         target: 'http://197.44.196.138',
         changeOrigin: true,
