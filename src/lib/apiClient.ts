@@ -179,8 +179,7 @@ client.interceptors.response.use(
     if (
       body &&
       typeof body === 'object' &&
-      'success' in body &&
-      'message' in body
+      'success' in body
     ) {
       const envelope = body as ApiResponse<unknown>;
       if (!envelope.success) {

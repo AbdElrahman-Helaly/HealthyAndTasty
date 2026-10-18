@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { GlobalSearch } from './GlobalSearch';
 import { useAuth } from '@/context/AuthContext';
+import { BranchOrderNotifications } from './BranchOrderNotifications';
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -12,7 +13,8 @@ interface TopNavProps {
 
 export function TopNav({ onMenuClick, unreadCount = 0 }: TopNavProps) {
   const { t, i18n } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const branchRole = ['branchemployee', 'branchmanager'].includes(user?.role.toLowerCase() ?? '');
 
   function toggleLanguage() {
     const next = i18n.language === 'ar' ? 'en' : 'ar';
@@ -36,7 +38,7 @@ export function TopNav({ onMenuClick, unreadCount = 0 }: TopNavProps) {
           {i18n.language === 'ar' ? 'EN' : 'AR'}
         </button>
 
-        <Link
+        {branchRole ? <BranchOrderNotifications key={user?.id} /> : <Link
           to="/notifications"
           className="relative flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors"
         >
@@ -46,7 +48,7 @@ export function TopNav({ onMenuClick, unreadCount = 0 }: TopNavProps) {
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
-        </Link>
+        </Link>}
 
         <div className="mx-1 h-6 w-px bg-outline-variant/30" />
 

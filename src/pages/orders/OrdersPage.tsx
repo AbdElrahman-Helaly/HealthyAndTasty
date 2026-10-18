@@ -13,6 +13,7 @@ import { listOrders } from '@/api/orders.api';
 import { orderStatusConfig, formatCurrency } from '@/config/orderStatus';
 import { ORDER_STATUS, type DashboardOrderListItem, type OrderListParams, type OrderStatusNumber } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { BRANCH_ORDER_CREATED } from '@/components/layout/BranchOrderNotifications';
 
 const PAGE_SIZE = 12;
 
@@ -71,6 +72,12 @@ export function OrdersPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [status, search, from, to, load]);
+
+  useEffect(() => {
+    const refresh = () => { void load(1, { status, search, from, to }); };
+    window.addEventListener(BRANCH_ORDER_CREATED, refresh);
+    return () => window.removeEventListener(BRANCH_ORDER_CREATED, refresh);
+  }, [load, status, search, from, to]);
 
   const columns = useMemo<Column<DashboardOrderListItem>[]>(
     () => [
