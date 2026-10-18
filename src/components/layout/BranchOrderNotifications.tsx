@@ -41,17 +41,22 @@ export function BranchOrderNotifications() {
   const play = () => {
     const context = audio.current;
     if (!soundEnabled.current || !context || context.state !== 'running') return;
-    for (let index = 0; index < 3; index++) {
+    // A soft, bell-like tri-tone inspired by phone notification chimes.
+    const notes = [1318.51, 1567.98, 2093.0];
+    for (let index = 0; index < notes.length; index++) {
+      for (const harmonic of [1, 2]) {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      const start = context.currentTime + index * 0.4;
-      oscillator.frequency.value = index % 2 ? 1000 : 800;
+      const start = context.currentTime + index * 0.13;
+      oscillator.type = 'sine';
+      oscillator.frequency.value = notes[index] * harmonic;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.5, start + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+      gain.gain.linearRampToValueAtTime(harmonic === 1 ? 0.3 : 0.045, start + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
       oscillator.connect(gain); gain.connect(context.destination);
-      oscillator.start(start); oscillator.stop(start + 0.32);
+      oscillator.start(start); oscillator.stop(start + 0.72);
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+      }
     }
   };
   useLiveOrders(event => {
