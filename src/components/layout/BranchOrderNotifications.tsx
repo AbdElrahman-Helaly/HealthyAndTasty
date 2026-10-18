@@ -18,6 +18,12 @@ export function BranchOrderNotifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sound, setSound] = useState(false);
+  const [newCount, setNewCount] = useState(0);
+  const knownNotifications = useRef(new Set<string>());
+  const initialized = useRef(false);
+  const viewing = useRef(false);
+  viewing.current = open || full;
+  const muted = useRef(false);
   const audio = useRef<AudioContext | null>(null);
   const request = useRef(0);
   const busy = useRef(false);
@@ -30,6 +36,12 @@ export function BranchOrderNotifications() {
     try {
       const result = await http.get<Notification[]>('/api/v1/notifications/branch-orders', { params: { page: next, pageSize: 20 } });
       if (version !== request.current) return;
+      if (next === 1 && initialized.current && !viewing.current) {
+        const arrived = result.filter(item => !knownNotifications.current.has(item.id));
+        setNewCount(value => value + arrived.length);
+      }
+      result.forEach(item => knownNotifications.current.add(item.id));
+      initialized.current = true;
       setItems(previous => [...new Map((next === 1 ? result : [...previous, ...result]).map(item => [item.id, item])).values()]);
       setPage(next); setMore(result.length === 20);
     } catch (err) {
@@ -59,6 +71,28 @@ export function BranchOrderNotifications() {
       }
     }
   };
+  useEffect(() => {
+    let disposed = false;
+    const enableAudio = () => {
+      if (muted.current) return;
+      try {
+        audio.current ??= new AudioContext();
+        void audio.current.resume().then(() => {
+          if (!disposed && !muted.current && audio.current?.state === 'running') {
+            soundEnabled.current = true;
+            setSound(true);
+          }
+        }).catch(() => { /* The next user interaction can retry audio activation. */ });
+      } catch { /* Keep notifications available when audio is unsupported. */ }
+    };
+    window.addEventListener('pointerdown', enableAudio);
+    window.addEventListener('keydown', enableAudio);
+    return () => {
+      disposed = true;
+      window.removeEventListener('pointerdown', enableAudio);
+      window.removeEventListener('keydown', enableAudio);
+    };
+  }, []);
   useLiveOrders(event => {
     if (event.type !== 'created') return;
     void load(1);
@@ -74,7 +108,8 @@ export function BranchOrderNotifications() {
     return () => { request.current++; soundEnabled.current = false; void audio.current?.close(); audio.current = null; };
   }, [load]);
   const toggleSound = async () => {
-    if (soundEnabled.current) { soundEnabled.current = false; setSound(false); return; }
+    if (soundEnabled.current) { muted.current = true; soundEnabled.current = false; setSound(false); return; }
+    muted.current = false;
     try {
       audio.current ??= new AudioContext();
       await audio.current.resume();
@@ -95,7 +130,7 @@ export function BranchOrderNotifications() {
     {!full && <Button variant="ghost" onClick={() => { setOpen(false); setFull(true); }}>عرض القائمة الكاملة</Button>}
   </div>;
   return <>
-    <Button variant="ghost" size="icon" title="إشعارات أوردرات الفروع" aria-label="إشعارات أوردرات الفروع" aria-expanded={open} onClick={() => setOpen(value => !value)}><Bell className="h-[18px] w-[18px]" /></Button>
+    <Button variant="ghost" size="icon" className="relative" title="إشعارات أوردرات الفروع" aria-label={`إشعارات أوردرات الفروع${newCount ? `، ${newCount} جديدة في هذه الجلسة` : ''}`} aria-expanded={open} onClick={() => { setNewCount(0); setOpen(value => !value); }}><Bell className="h-[18px] w-[18px]" />{newCount > 0 && <span aria-live="polite" title="إشعارات جديدة في هذه الجلسة" className="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">{newCount > 99 ? '99+' : newCount}</span>}</Button>
     {open && <><button className="fixed inset-0 z-30 cursor-default" aria-label="إغلاق الإشعارات" onClick={() => setOpen(false)} /><section aria-label="إشعارات أوردرات الفروع" className="absolute top-16 end-2 z-40 w-[calc(100vw-1rem)] max-w-md rounded-lg border border-outline-variant bg-surface p-3 shadow-xl">{content}</section></>}
     {full && <Modal open title="إشعارات أوردرات الفروع" onClose={() => setFull(false)} size="lg">{content}</Modal>}
   </>;
