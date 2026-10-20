@@ -246,7 +246,7 @@ export function OrderDetailsPage() {
               )}
               <div className="flex items-center justify-between gap-12 text-sm">
                 <span className="text-on-surface-variant/70">رسوم التوصيل</span>
-                <span className="text-on-surface">{formatCurrency(order.deliveryFee)}</span>
+                <span className="text-on-surface">{order.deliveryFee === 0 ? 'شحن مجاني' : typeof order.deliveryFee === 'number' && Number.isFinite(order.deliveryFee) ? formatCurrency(order.deliveryFee) : 'غير محددة'}</span>
               </div>
               <div className="flex items-center justify-between gap-12 pt-2 border-t border-gray-100">
                 <span className="font-semibold text-on-surface">الإجمالي</span>

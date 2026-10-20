@@ -1,5 +1,21 @@
 import { http } from '@/lib/apiClient';
 
+export interface FreeShippingSetting {
+  branchId: string;
+  odooBranchId: number;
+  branchName: string;
+  isFreeShipping: boolean;
+}
+export type FreeShippingRequest = { isFreeShipping: boolean } & (
+  { allBranches: true } | { allBranches: false; branchIds: string[] }
+);
+export function listFreeShipping(): Promise<FreeShippingSetting[]> {
+  return http.get('/api/admin/shipping-rates/free-shipping');
+}
+export function saveFreeShipping(body: FreeShippingRequest): Promise<unknown> {
+  return http.put('/api/admin/shipping-rates/free-shipping', body);
+}
+
 export type BulkShippingRatesRequest = {
   bands: { minDistanceKm: number; maxDistanceKm: number; fee: number }[];
 } & ({ allBranches: true } | { allBranches: false; branchIds: string[] });

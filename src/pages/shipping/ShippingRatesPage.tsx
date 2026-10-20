@@ -22,6 +22,7 @@ import type { BranchAdmin, ShippingRate } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
+import { FreeShippingSection } from './FreeShippingSection';
 import { BulkShippingRatesModal } from './BulkShippingRatesModal';
 
 const MANAGER_ROLES = ['admin', 'generalmanager'];
@@ -470,6 +471,8 @@ export function ShippingRatesPage() {
           void load();
         }}
       />}
+
+      {canManage && <FreeShippingSection />}
 
       <RateFormModal
         open={modalOpen}
