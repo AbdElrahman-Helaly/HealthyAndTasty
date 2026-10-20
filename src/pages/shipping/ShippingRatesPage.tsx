@@ -224,6 +224,7 @@ export function ShippingRatesPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'rates' | 'free'>('rates');
   const [editingRate, setEditingRate] = useState<ShippingRate | null>(null);
   const [deletingRate, setDeletingRate] = useState<ShippingRate | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -408,8 +409,8 @@ export function ShippingRatesPage() {
         title={t('shippingRates.title')}
         subtitle={t('shippingRates.subtitle')}
         actions={
-          <div className="flex items-center gap-2">
-            {canManage && (
+          <div className="flex flex-wrap items-center gap-2">
+            {canManage && activeTab === 'rates' && (
               <Button
                 size="sm"
                 className="gap-1.5"
@@ -429,9 +430,33 @@ export function ShippingRatesPage() {
         }
       />
 
-      {canManage && <FreeShippingSection activeBranchIds={branches.map(branch => branch.id)} />}
+      {canManage && <div role="tablist" aria-label="إعدادات الشحن" className="mb-5 flex border-b border-outline-variant/40">
+        {([{ key: 'rates', label: 'شرائح أسعار التوصيل' }, { key: 'free', label: 'الشحن المجاني' }] as const).map((tab, index) => <button
+          key={tab.key}
+          id={`shipping-tab-${tab.key}`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === tab.key}
+          aria-controls={`shipping-panel-${tab.key}`}
+          tabIndex={activeTab === tab.key ? 0 : -1}
+          onClick={() => setActiveTab(tab.key)}
+          onKeyDown={event => {
+            if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+              event.preventDefault();
+              const next = event.key === 'Home' ? 'rates' : event.key === 'End' ? 'free' : index === 0 ? 'free' : 'rates';
+              setActiveTab(next);
+              document.getElementById(`shipping-tab-${next}`)?.focus();
+            }
+          }}
+          className={`min-h-12 flex-1 border-b-2 px-3 py-3 text-sm font-semibold transition-colors sm:flex-none sm:px-6 ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-primary'}`}
+        >{tab.label}</button>)}
+      </div>}
 
-      <h2 className="mb-4 mt-6 text-lg font-semibold">شرائح أسعار التوصيل</h2>
+      {canManage && <div role="tabpanel" id="shipping-panel-free" aria-labelledby="shipping-tab-free" hidden={activeTab !== 'free'}>
+        <FreeShippingSection activeBranchIds={branches.map(branch => branch.id)} />
+      </div>}
+
+      <div role={canManage ? 'tabpanel' : undefined} id="shipping-panel-rates" aria-labelledby={canManage ? 'shipping-tab-rates' : undefined} hidden={canManage && activeTab !== 'rates'}>
       <Card padding="md" className="mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Select
@@ -467,6 +492,8 @@ export function ShippingRatesPage() {
           />
         )}
       </Card>
+
+      </div>
 
       {bulkOpen && canManage && <BulkShippingRatesModal
         branches={branches}
