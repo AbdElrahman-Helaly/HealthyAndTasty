@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { createBulkShippingRates } from '@/api/shippingRates.api';
 import { ApiError } from '@/lib/apiClient';
@@ -13,7 +14,9 @@ export function BulkShippingRatesModal({ branches, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [allBranches, setAllBranches] = useState(true);
+  const [scope, setScope] = useState<'single' | 'multiple' | 'all'>('single');
+  const [search, setSearch] = useState('');
+  const allBranches = scope === 'all';
   const [branchIds, setBranchIds] = useState<string[]>([]);
   const [bands, setBands] = useState([{ id: 0, minDistanceKm: '', maxDistanceKm: '', fee: '' }]);
   const nextId = useRef(1);
@@ -61,11 +64,12 @@ export function BulkShippingRatesModal({ branches, onClose, onSaved }: {
     <div className="flex flex-col gap-4" dir="rtl">
       <fieldset disabled={saving} className="flex flex-wrap gap-4">
         <legend className="mb-2 text-sm font-semibold">تطبيق على</legend>
-        <label className="flex items-center gap-2"><input type="radio" name="shippingScope" checked={allBranches} onChange={() => setAllBranches(true)} />كل الفروع</label>
-        <label className="flex items-center gap-2"><input type="radio" name="shippingScope" checked={!allBranches} onChange={() => setAllBranches(false)} />فروع محددة</label>
+        <label className="flex items-center gap-2"><input type="radio" name="shippingScope" checked={scope === 'single'} onChange={() => { setScope('single'); setBranchIds(previous => previous.slice(0, 1)); }} />فرع واحد</label>
+        <label className="flex items-center gap-2"><input type="radio" name="shippingScope" checked={scope === 'multiple'} onChange={() => setScope('multiple')} />مجموعة فروع</label>
+        <label className="flex items-center gap-2"><input type="radio" name="shippingScope" checked={allBranches} onChange={() => setScope('all')} />كل الفروع</label>
       </fieldset>
       {!allBranches && <div className={saving ? 'pointer-events-none opacity-60' : ''}>
-        <MultiSelect label="الفروع" options={branches.map(branch => ({ value: branch.id, label: branch.name }))} value={branchIds} onChange={setBranchIds} searchable placeholder="اختر الفروع" searchPlaceholder="بحث باسم الفرع" noResultsText="لا توجد فروع" />
+        {scope === 'single' ? <div className="flex flex-col gap-2"><Input label="بحث باسم الفرع" type="search" disabled={saving} value={search} onChange={event => setSearch(event.target.value)} /><Select label="الفرع" disabled={saving} value={branchIds[0] ?? ''} onChange={event => setBranchIds(event.target.value ? [event.target.value] : [])}><option value="">اختر الفرع</option>{branches.filter(branch => branchIds.includes(branch.id) || branch.name.toLowerCase().includes(search.trim().toLowerCase())).map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</Select></div> : <MultiSelect label="الفروع" options={branches.map(branch => ({ value: branch.id, label: branch.name }))} value={branchIds} onChange={setBranchIds} searchable placeholder="اختر الفروع" searchPlaceholder="بحث باسم الفرع" noResultsText="لا توجد فروع" />}
       </div>}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-start text-sm">
