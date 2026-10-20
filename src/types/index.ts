@@ -243,6 +243,12 @@ export interface OrderStatusHistory {
 }
 
 export interface DashboardOrderDetail extends DashboardOrderListItem {
+  rating?: number | null;
+  ratingComment?: string | null;
+  ratedAt?: string | null;
+  adminReply?: string | null;
+  adminRepliedAt?: string | null;
+  adminRepliedBy?: string | number | null;
   deliveryEstimate?: {
     value: number;
     unit: 'minutes' | 'hours' | 'days';

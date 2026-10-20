@@ -9,6 +9,11 @@ import type {
 } from '@/types';
 
 /** GET /api/admin/orders */
+export function replyToOrderRating(id: number | string, reply: string): Promise<DashboardOrderDetail> {
+  return http.put(`/api/admin/orders/${encodeURIComponent(String(id))}/rating/reply`, { reply });
+}
+
+/** GET /api/admin/orders */
 export function listOrders(params: OrderListParams = {}): Promise<PagedResult<DashboardOrderListItem>> {
   const qs = new URLSearchParams();
   if (params.status !== undefined) qs.set('status', String(params.status));

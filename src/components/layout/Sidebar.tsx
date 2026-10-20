@@ -153,6 +153,7 @@ const navGroups: NavGroup[] = [
     labelKey: 'nav.sectionSystem',
     items: [
       { to: '/settings/order-delivery-time', icon: Truck, labelKey: 'nav.orderDeliveryTime', roles: ['admin', 'generalmanager'] },
+      { to: '/settings/branch-hours', icon: Building2, labelKey: 'nav.branchHours' },
       { to: '/profile', icon: UserCircle, labelKey: 'nav.profile' },
     ],
   },

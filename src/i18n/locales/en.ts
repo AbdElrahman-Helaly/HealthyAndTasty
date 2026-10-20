@@ -1,5 +1,6 @@
 export const en = {
   nav: {
+    branchHours: 'Branch Hours',
     orderDeliveryTime: 'Order Delivery Time',
     dashboard: 'Dashboard',
     countries: 'Countries',

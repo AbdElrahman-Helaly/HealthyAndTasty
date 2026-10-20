@@ -1,4 +1,5 @@
 import { ApiImage } from '@/components/ui/ApiImage';
+import { OrderRating } from './OrderRating';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -185,6 +186,7 @@ export function OrderDetailsPage() {
             </> : <p>مدة التوصيل غير محددة</p>}
           </div>
 
+          <OrderRating key={order.id} order={order} onSaved={setOrder} />
           {/* Items */}
           <Card padding="xl">
             <div className="flex items-center gap-2.5 mb-4">
