@@ -246,8 +246,11 @@ export function ShippingRatesPage() {
         listShippingRates(branchFilter || undefined),
         listBranches(),
       ]);
-      setRates(rateList);
-      setBranches(branchList);
+      const activeBranches = branchList.filter(branch => branch.isActive);
+      const activeIds = new Set(activeBranches.map(branch => branch.id));
+      setRates(rateList.filter(rate => rate.isActive && activeIds.has(rate.branchId)));
+      setBranches(activeBranches);
+      if (branchFilter && !activeIds.has(branchFilter)) setBranchFilter('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'فشل تحميل أسعار التوصيل');
     }
@@ -259,7 +262,7 @@ export function ShippingRatesPage() {
 
   const applyMutation = useCallback(
     (rate: ShippingRate) => {
-      const matchesFilter = !branchFilter || rate.branchId === branchFilter;
+      const matchesFilter = rate.isActive && (!branchFilter || rate.branchId === branchFilter);
       if (matchesFilter) {
         setRates((prev) => {
           const exists = prev.some((r) => r.id === rate.id);
@@ -267,7 +270,7 @@ export function ShippingRatesPage() {
             ? prev.map((r) => (r.id === rate.id ? { ...rate, branchName: rate.branchName || resolveBranchName(rate.branchId) || r.branchName } : r))
             : [...prev, { ...rate, branchName: rate.branchName || resolveBranchName(rate.branchId) }];
         });
-      } else if (rate.branchId !== branchFilter) {
+      } else {
         setRates((prev) => prev.filter((r) => r.id !== rate.id));
       }
     },
@@ -284,7 +287,7 @@ export function ShippingRatesPage() {
         pricePerKm: rate.pricePerKm,
         isActive: !rate.isActive,
       });
-      setRates((prev) => prev.map((r) => (r.id === rate.id ? updated : r)));
+      setRates((prev) => prev.map((r) => (r.id === rate.id ? updated : r)).filter(r => r.isActive));
       showToast('تم التحديث بنجاح', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'فشل التحديث', 'error');
@@ -426,6 +429,9 @@ export function ShippingRatesPage() {
         }
       />
 
+      {canManage && <FreeShippingSection activeBranchIds={branches.map(branch => branch.id)} />}
+
+      <h2 className="mb-4 mt-6 text-lg font-semibold">شرائح أسعار التوصيل</h2>
       <Card padding="md" className="mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Select
@@ -471,8 +477,6 @@ export function ShippingRatesPage() {
           void load();
         }}
       />}
-
-      {canManage && <FreeShippingSection />}
 
       <RateFormModal
         open={modalOpen}

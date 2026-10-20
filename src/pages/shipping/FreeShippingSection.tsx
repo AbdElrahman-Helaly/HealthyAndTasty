@@ -7,7 +7,7 @@ import { listFreeShipping, saveFreeShipping, type FreeShippingSetting, type Free
 import { ApiError } from '@/lib/apiClient';
 import { useToast } from '@/hooks/useToast';
 
-export function FreeShippingSection() {
+export function FreeShippingSection({ activeBranchIds }: { activeBranchIds: string[] }) {
   const { show } = useToast();
   const [rows, setRows] = useState<FreeShippingSetting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,7 @@ export function FreeShippingSection() {
   const [free, setFree] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmation, setConfirmation] = useState<FreeShippingRequest | null>(null);
+  const visibleRows = rows.filter(row => activeBranchIds.includes(row.branchId));
   const pending = useRef(false);
   const version = useRef(0);
   const describe = (err: unknown) => err instanceof ApiError ? [err.message, ...err.errors].join('، ') : 'تعذر تنفيذ الطلب';
@@ -48,15 +49,15 @@ export function FreeShippingSection() {
     setError('');
     if (allBranches) setConfirmation(body); else void save(body);
   };
-  return <section dir="rtl" className="mt-8 border-t border-outline-variant/40 pt-5">
+  return <section dir="rtl" className="mb-6 border-b border-outline-variant/40 pb-5">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">الشحن المجاني</h2><div className="flex gap-2"><Button size="sm" disabled={loading || !!loadError || saving} onClick={() => edit()}><Plus className="h-4 w-4" />تعديل الشحن المجاني</Button><Button variant="secondary" size="icon" title="تحديث الشحن المجاني" aria-label="تحديث الشحن المجاني" disabled={loading || saving} onClick={() => void load()}><RefreshCw className="h-4 w-4" /></Button></div></div>
-    {loading ? <p role="status">جاري تحميل إعدادات الشحن المجاني...</p> : loadError ? <p role="alert" className="text-error">{loadError}</p> : <div className="overflow-x-auto"><table className="w-full min-w-[360px] text-sm"><thead><tr><th className="p-3 text-start">الفرع</th><th className="p-3 text-start">الشحن المجاني</th><th className="p-3 text-start">إجراءات</th></tr></thead><tbody>{rows.map(row => <tr key={row.branchId} className="border-t border-outline-variant/40"><td className="p-3">{row.branchName}</td><td className="p-3">{row.isFreeShipping ? 'مفعّل' : 'غير مفعّل'}</td><td className="p-3"><Button size="icon" variant="ghost" title="تعديل" aria-label={`تعديل الشحن المجاني: ${row.branchName}`} disabled={saving} onClick={() => edit(row)}><Pencil className="h-4 w-4" /></Button></td></tr>)}</tbody></table>{!rows.length && <p className="py-6 text-center">لا توجد إعدادات فروع</p>}</div>}
+    {loading ? <p role="status">جاري تحميل إعدادات الشحن المجاني...</p> : loadError ? <p role="alert" className="text-error">{loadError}</p> : <div className="overflow-x-auto"><table className="w-full min-w-[360px] text-sm"><thead><tr><th className="p-3 text-start">الفرع</th><th className="p-3 text-start">الشحن المجاني</th><th className="p-3 text-start">إجراءات</th></tr></thead><tbody>{visibleRows.map(row => <tr key={row.branchId} className="border-t border-outline-variant/40"><td className="p-3">{row.branchName}</td><td className="p-3">{row.isFreeShipping ? 'مفعّل' : 'غير مفعّل'}</td><td className="p-3"><Button size="icon" variant="ghost" title="تعديل" aria-label={`تعديل الشحن المجاني: ${row.branchName}`} disabled={saving} onClick={() => edit(row)}><Pencil className="h-4 w-4" /></Button></td></tr>)}</tbody></table>{!visibleRows.length && <p className="py-6 text-center">لا توجد إعدادات فروع</p>}</div>}
     <Modal open={open && confirmation === null} title="إعداد الشحن المجاني" onClose={() => { if (!pending.current) setOpen(false); }}>
       <form dir="rtl" className="flex flex-col gap-4" onSubmit={event => { event.preventDefault(); submit(); }}>
         <fieldset disabled={saving} className={saving ? 'pointer-events-none flex flex-col gap-4' : 'flex flex-col gap-4'}>
           <legend className="mb-3 text-sm font-semibold">نطاق التطبيق</legend>
           <div className="flex flex-wrap gap-4 text-sm"><label className="flex items-center gap-2"><input type="radio" name="freeShippingScope" checked={!allBranches} onChange={() => setAllBranches(false)} />فروع محددة</label><label className="flex items-center gap-2"><input type="radio" name="freeShippingScope" checked={allBranches} onChange={() => setAllBranches(true)} />كل الفروع</label></div>
-          {!allBranches && <MultiSelect label="الفروع" searchable options={rows.map(row => ({ value: row.branchId, label: row.branchName }))} value={branchIds} onChange={setBranchIds} placeholder="اختر الفروع" searchPlaceholder="بحث باسم الفرع" noResultsText="لا توجد فروع" />}
+          {!allBranches && <MultiSelect label="الفروع" searchable options={visibleRows.map(row => ({ value: row.branchId, label: row.branchName }))} value={branchIds} onChange={setBranchIds} placeholder="اختر الفروع" searchPlaceholder="بحث باسم الفرع" noResultsText="لا توجد فروع" />}
           <label className="flex items-center gap-3 text-sm"><input type="checkbox" role="switch" checked={free} onChange={event => setFree(event.target.checked)} />الشحن المجاني</label>
         </fieldset>
         <p className="text-xs text-on-surface-variant">يسري على الطلبات الجديدة فقط. الشرائح الحالية تظل محفوظة وتُستخدم عند إلغاء المجاني، وحدود نطاق التوصيل لا تتغير.</p>
