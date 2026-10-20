@@ -27,7 +27,7 @@ export function TopNav({ onMenuClick, unreadCount = 0 }: TopNavProps) {
         <Menu className="h-4 w-4" />
       </Button>
 
-      <GlobalSearch />
+      {user?.role.toLowerCase() !== 'branchemployee' && <GlobalSearch />}
 
       <div className="ms-auto flex items-center gap-2">
         <button

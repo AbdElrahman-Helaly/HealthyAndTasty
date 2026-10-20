@@ -29,6 +29,11 @@ export function ProtectedRoute({
     return <PageLoader />;
   }
 
+  if (user?.role.toLowerCase() === 'branchemployee') {
+    const allowed = /^\/orders(?:\/\d+)?\/?$/.test(location.pathname) || /^\/inventory\/?$/.test(location.pathname);
+    return allowed ? <>{children}</> : <Navigate to="/orders" replace />;
+  }
+
   if (requiredRoles && requiredRoles.length > 0) {
     const role = user?.role ?? '';
     const allowed = requiredRoles.some((r) => role.toLowerCase().includes(r.toLowerCase()));

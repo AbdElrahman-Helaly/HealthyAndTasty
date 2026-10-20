@@ -87,6 +87,7 @@ function filterNavGroups(
     .map((g) => ({
       ...g,
       items: g.items.filter((item) => {
+        if (normalizedRole === 'branchemployee') return ['/orders', '/inventory'].includes(item.to);
         if (item.permission && !permissions.includes(item.permission)) return false;
         if (item.roles && !item.roles.some((r) => normalizedRole.includes(r))) return false;
         return true;

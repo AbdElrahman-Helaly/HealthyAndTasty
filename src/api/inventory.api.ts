@@ -99,6 +99,7 @@ function normalizePage(
 export async function listInventoryProducts(
   params: InventoryListParams = {},
   fallbackBranchName = '',
+  allowCatalogFallback = true,
 ): Promise<InventoryPage> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
@@ -122,7 +123,7 @@ export async function listInventoryProducts(
     // Fall back to catalog ONLY when the admin endpoint doesn't exist (404).
     // Any other failure (400/500 — e.g. bad branchId) must surface instead of
     // silently showing unfiltered data that looks like "filter not working".
-    if (!(err instanceof ApiError) || err.status !== 404) throw err;
+    if (!allowCatalogFallback || !(err instanceof ApiError) || err.status !== 404) throw err;
   }
 
   // 2) Fallback: public catalog endpoint (no branch support) + client-side filtering

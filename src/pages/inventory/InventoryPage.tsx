@@ -22,6 +22,7 @@ import { listInventoryProducts } from '@/api/inventory.api';
 import type { BranchAdmin, InventoryProduct } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ApiImage, resolveImageUrl } from '@/components/ui/ApiImage';
+import { useAuth } from '@/context/AuthContext';
 
 const PAGE_SIZE = 20;
 
@@ -35,8 +36,10 @@ function formatPrice(value: number): string {
 
 export function InventoryPage() {
   const { t } = useTranslation();
+  const { user, assignedBranches } = useAuth();
+  const branchEmployee = user?.role.toLowerCase() === 'branchemployee';
   const [rows, setRows] = useState<InventoryProduct[]>([]);
-  const [branches, setBranches] = useState<BranchAdmin[]>([]);
+  const [branches, setBranches] = useState<Pick<BranchAdmin, 'id' | 'name' | 'odooBranchId'>[]>([]);
   const [branchId, setBranchId] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -64,6 +67,12 @@ export function InventoryPage() {
 
   const loadBranches = useCallback(async () => {
     setBranchesLoading(true);
+    if (branchEmployee) {
+      setBranches(assignedBranches.map(branch => ({ id: branch.branchId, name: branch.name, odooBranchId: branch.odooBranchId })));
+      setBranchId(previous => assignedBranches.some(branch => String(branch.odooBranchId) === previous) ? previous : assignedBranches[0] ? String(assignedBranches[0].odooBranchId) : '');
+      setBranchesLoading(false);
+      return;
+    }
     try {
       const list = await listBranches();
       setBranches(list ?? []);
@@ -73,13 +82,18 @@ export function InventoryPage() {
     } finally {
       setBranchesLoading(false);
     }
-  }, []);
+  }, [branchEmployee, assignedBranches]);
 
   const load = useCallback(
     async (p: number, opts: { branchId: string; search: string }) => {
       setLoading(true);
       setError('');
       try {
+        if (branchEmployee && !assignedBranches.some(branch => String(branch.odooBranchId) === opts.branchId)) {
+          setRows([]); setTotalCount(0); setTotalPages(1);
+          setError(assignedBranches.length ? 'اختر فرعك لعرض منتجاته' : 'لا يوجد فرع مسند لحسابك');
+          return;
+        }
         const res = await listInventoryProducts(
           {
             page: p,
@@ -88,6 +102,7 @@ export function InventoryPage() {
             search: opts.search || undefined,
           },
           opts.branchId ? (findBranch(opts.branchId)?.name ?? '') : '',
+          !branchEmployee,
         );
         // Enrich branchName when backend doesn't return it (catalog fallback)
         const enriched = res.items.map((item) => {
@@ -109,7 +124,7 @@ export function InventoryPage() {
         setLoading(false);
       }
     },
-    [findBranch],
+    [findBranch, branchEmployee, assignedBranches],
   );
 
   useEffect(() => {
@@ -270,17 +285,17 @@ export function InventoryPage() {
           comparisonText={
             branchId && selectedBranch
               ? `في فرع ${selectedBranch.name}`
-              : 'من كل الفروع'
+              : branchEmployee ? 'منتجات الفرع المسند لحسابك' : 'من كل الفروع'
           }
           index={0}
         />
         <StatCard
           label="الفرع المختار"
-          value={branchId ? (selectedBranch?.name ?? '—') : 'كل الفروع'}
+          value={branchId ? (selectedBranch?.name ?? '—') : branchEmployee ? 'غير محدد' : 'كل الفروع'}
           icon={<Building2 className="h-5 w-5" />}
           iconColor="#EA580C"
           comparisonText={
-            branchId ? `${totalCount.toLocaleString('ar-EG')} منتج في هذا الفرع` : 'عرض كل المنتجات من كل الفروع'
+            branchId ? `${totalCount.toLocaleString('ar-EG')} منتج في هذا الفرع` : branchEmployee ? 'اختر الفرع المسند لحسابك' : 'عرض كل المنتجات من كل الفروع'
           }
           index={1}
         />
@@ -302,7 +317,7 @@ export function InventoryPage() {
             disabled={branchesLoading}
             onChange={(e) => handleBranchChange(e.target.value)}
           >
-            <option value="">كل الفروع</option>
+            {!branchEmployee && <option value="">كل الفروع</option>}
             {branches.map((b) => (
               <option key={b.id} value={String(b.odooBranchId ?? b.id)}>
                 {b.name}
@@ -355,7 +370,7 @@ export function InventoryPage() {
                     className="mt-4"
                     onClick={() => {
                       setSearch('');
-                      setBranchId('');
+                      if (!branchEmployee) setBranchId('');
                     }}
                   >
                     مسح الفلاتر
