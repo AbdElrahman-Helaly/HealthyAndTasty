@@ -151,7 +151,10 @@ const navGroups: NavGroup[] = [
   },
   {
     labelKey: 'nav.sectionSystem',
-    items: [{ to: '/profile', icon: UserCircle, labelKey: 'nav.profile' }],
+    items: [
+      { to: '/settings/order-delivery-time', icon: Truck, labelKey: 'nav.orderDeliveryTime', roles: ['admin', 'generalmanager'] },
+      { to: '/profile', icon: UserCircle, labelKey: 'nav.profile' },
+    ],
   },
 ];
 

@@ -41,6 +41,7 @@ const OffersPage = lazy(() =>
   import('@/pages/offers/OffersPage').then((m) => ({ default: m.OffersPage })),
 );
 const BannersPage = lazy(() => import('@/pages/banners/BannersPage').then(m => ({ default: m.BannersPage })));
+const OrderDeliveryTimePage = lazy(() => import('@/pages/settings/OrderDeliveryTimePage').then(m => ({ default: m.OrderDeliveryTimePage })));
 const CategoriesPage = lazy(() =>
   import('@/pages/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
 );
@@ -222,6 +223,7 @@ export default function App() {
               }
             />
             <Route path="banners" element={<ProtectedRoute requiredRoles={['admin', 'generalmanager']}><LazyPage><BannersPage /></LazyPage></ProtectedRoute>} />
+            <Route path="settings/order-delivery-time" element={<ProtectedRoute requiredRoles={['admin', 'generalmanager']}><LazyPage><OrderDeliveryTimePage /></LazyPage></ProtectedRoute>} />
             <Route path="profile" element={<LazyPage><ProfilePage /></LazyPage>} />
             <Route path="unauthorized" element={<LazyPage><UnauthorizedPage /></LazyPage>} />
           </Route>

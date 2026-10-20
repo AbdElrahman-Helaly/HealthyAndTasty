@@ -2,6 +2,7 @@ import type { TranslationKeys } from './en';
 
 export const ar: TranslationKeys = {
   nav: {
+    orderDeliveryTime: 'مدة توصيل الطلبات',
     dashboard: 'لوحة التحكم',
     countries: 'الدول',
     categories: 'الفئات',

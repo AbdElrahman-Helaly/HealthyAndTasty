@@ -243,6 +243,11 @@ export interface OrderStatusHistory {
 }
 
 export interface DashboardOrderDetail extends DashboardOrderListItem {
+  deliveryEstimate?: {
+    value: number;
+    unit: 'minutes' | 'hours' | 'days';
+    estimatedDeliveryAt: string;
+  } | null;
   deliveryAddress: string;
   addressLatitude: number;
   addressLongitude: number;

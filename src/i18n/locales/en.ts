@@ -1,5 +1,6 @@
 export const en = {
   nav: {
+    orderDeliveryTime: 'Order Delivery Time',
     dashboard: 'Dashboard',
     countries: 'Countries',
     categories: 'Categories',

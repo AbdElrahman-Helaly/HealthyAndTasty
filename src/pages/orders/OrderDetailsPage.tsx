@@ -177,6 +177,14 @@ export function OrderDetailsPage() {
             </div>
           </Card>
 
+          <div className="border-y border-outline-variant/40 py-4 text-sm">
+            {order.deliveryEstimate ? <>
+              <p className="font-semibold">مدة التوصيل: {order.deliveryEstimate.value} {{ minutes: 'دقيقة', hours: 'ساعة', days: 'يوم' }[order.deliveryEstimate.unit]}</p>
+              <p className="mt-2">موعد الوصول المتوقع: <time dateTime={order.deliveryEstimate.estimatedDeliveryAt}>{new Date(order.deliveryEstimate.estimatedDeliveryAt).toLocaleString('ar-EG')}</time></p>
+              <p className="mt-2 text-xs text-on-surface-variant">تقدير ثابت من وقت إنشاء الطلب. لا يمثل تتبعًا مباشرًا للمندوب.</p>
+            </> : <p>مدة التوصيل غير محددة</p>}
+          </div>
+
           {/* Items */}
           <Card padding="xl">
             <div className="flex items-center gap-2.5 mb-4">
