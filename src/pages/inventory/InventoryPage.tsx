@@ -37,7 +37,7 @@ function formatPrice(value: number): string {
 export function InventoryPage() {
   const { t } = useTranslation();
   const { user, assignedBranches } = useAuth();
-  const branchEmployee = user?.role.toLowerCase() === 'branchemployee';
+  const branchEmployee = ['branchemployee', 'branchmanager'].includes(user?.role.toLowerCase() ?? '');
   const [rows, setRows] = useState<InventoryProduct[]>([]);
   const [branches, setBranches] = useState<Pick<BranchAdmin, 'id' | 'name' | 'odooBranchId'>[]>([]);
   const [branchId, setBranchId] = useState('');

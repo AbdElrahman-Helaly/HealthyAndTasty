@@ -29,7 +29,7 @@ export function ProtectedRoute({
     return <PageLoader />;
   }
 
-  if (user?.role.toLowerCase() === 'branchemployee') {
+  if (['branchemployee', 'branchmanager'].includes(user?.role.toLowerCase() ?? '')) {
     const allowed = /^\/orders(?:\/\d+)?\/?$/.test(location.pathname) || /^\/inventory\/?$/.test(location.pathname);
     return allowed ? <>{children}</> : <Navigate to="/orders" replace />;
   }
