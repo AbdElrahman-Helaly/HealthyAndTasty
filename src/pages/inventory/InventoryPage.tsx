@@ -182,13 +182,6 @@ export function InventoryPage() {
         ),
       },
       {
-        key: 'sku',
-        header: 'SKU',
-        render: (p) => (
-          <span className="font-mono text-xs font-semibold text-on-surface-variant">{p.sku}</span>
-        ),
-      },
-      {
         key: 'category',
         header: 'التصنيف',
         render: (p) => (
