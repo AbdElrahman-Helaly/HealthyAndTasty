@@ -23,7 +23,18 @@ export function listNotifications(
 export function sendNotification(
   body: SendNotificationRequest,
 ): Promise<NotificationListItem> {
-  return http.post<NotificationListItem>('/api/admin/notifications/send', body);
+  const formData = new FormData();
+  formData.append('Title', body.title);
+  formData.append('Body', body.body);
+  formData.append('Target', body.target);
+
+  if (body.targetUrl) formData.append('TargetUrl', body.targetUrl);
+  if (body.image) formData.append('Image', body.image);
+  if (body.target === 'user' && body.userId !== undefined) formData.append('UserId', String(body.userId));
+  if (body.target === 'role' && body.role) formData.append('Role', body.role);
+  if (body.target === 'branch' && body.branchId) formData.append('BranchId', body.branchId);
+
+  return http.post<NotificationListItem>('/api/admin/notifications/send', formData);
 }
 
 /** DELETE /api/admin/notifications/{id} */

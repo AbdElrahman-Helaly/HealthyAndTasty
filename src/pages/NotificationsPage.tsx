@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Send, Trash2 } from 'lucide-react';
+import { Plus, Send, Trash2, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { listNotifications, sendNotification, deleteNotification } from '@/api/notifications.api';
@@ -22,6 +23,7 @@ import { PERMISSIONS } from '@/types/permissions';
 import type { NotificationListItem, RoleDto, BranchAdmin, UserManagement } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
+import { ApiError } from '@/lib/apiClient';
 
 const PAGE_SIZE = 12;
 
@@ -29,11 +31,10 @@ const schema = z.object({
   title: z.string().min(1, 'العنوان مطلوب'),
   body: z.string().min(1, 'المحتوى مطلوب'),
   target: z.enum(['all', 'role', 'branch', 'user']),
-  imageUrl: z.string().optional().or(z.literal('')),
   targetUrl: z.string().optional().or(z.literal('')),
 });
 
-type FormData = z.infer<typeof schema>;
+type NotificationFormValues = z.infer<typeof schema>;
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -73,6 +74,9 @@ export function NotificationsPage() {
   const [roleName, setRoleName] = useState('');
   const [branchId, setBranchId] = useState('');
   const [userId, setUserId] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [image, setImage] = useState<File | null>(null);
+  const [submitErrors, setSubmitErrors] = useState<string[]>([]);
 
   usePageTitle(t('notifications.title'));
 
@@ -82,9 +86,9 @@ export function NotificationsPage() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<NotificationFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { title: '', body: '', target: 'all', imageUrl: '', targetUrl: '' },
+    defaultValues: { title: '', body: '', target: 'all', targetUrl: '' },
   });
 
   const target = watch('target');
@@ -122,27 +126,45 @@ export function NotificationsPage() {
     setRoleName('');
     setBranchId('');
     setUserId('');
+    setUserSearch('');
+    setImage(null);
+    setSubmitErrors([]);
     setDrawerOpen(true);
   }
 
-  async function onSubmit(data: FormData) {
+  async function onSubmit(data: NotificationFormValues) {
+    const targetError =
+      data.target === 'role' && !roleName
+        ? 'اختر الدور المطلوب.'
+        : data.target === 'branch' && !branchId
+          ? 'اختر الفرع المطلوب.'
+          : data.target === 'user' && !userId
+            ? 'اختر المستخدم المطلوب.'
+            : null;
+    if (targetError) {
+      setSubmitErrors([targetError]);
+      return;
+    }
+
+    setSubmitErrors([]);
     setSending(true);
     try {
       await sendNotification({
         title: data.title,
         body: data.body,
-        imageUrl: data.imageUrl || null,
-        targetUrl: data.targetUrl || null,
+        image,
+        targetUrl: data.targetUrl || undefined,
         target: data.target,
-        role: data.target === 'role' ? roleName || null : null,
-        branchId: data.target === 'branch' ? branchId || null : null,
-        userId: data.target === 'user' ? Number(userId) || null : null,
+        role: data.target === 'role' ? roleName : undefined,
+        branchId: data.target === 'branch' ? branchId : undefined,
+        userId: data.target === 'user' ? userId : undefined,
       });
       setDrawerOpen(false);
       showToast('تم إرسال الإشعار بنجاح', 'success');
       void load(1);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'فشل إرسال الإشعار', 'error');
+      const backendErrors = err instanceof ApiError ? err.errors : [];
+      setSubmitErrors(backendErrors.length > 0 ? backendErrors : [err instanceof Error ? err.message : 'فشل إرسال الإشعار']);
     } finally {
       setSending(false);
     }
@@ -217,6 +239,11 @@ export function NotificationsPage() {
     },
   ];
 
+  const visibleUsers = users.filter((user) => {
+    const query = userSearch.trim().toLowerCase();
+    return !query || `${user.name} ${user.email} ${user.phone}`.toLowerCase().includes(query);
+  });
+
   return (
     <div>
       <PageHeader
@@ -262,7 +289,7 @@ export function NotificationsPage() {
         title="إرسال إشعار"
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setDrawerOpen(false)}>إلغاء</Button>
+            <Button variant="secondary" disabled={sending} onClick={() => setDrawerOpen(false)}>إلغاء</Button>
             <Button loading={sending} onClick={() => void handleSubmit(onSubmit)()} className="gap-1.5">
               <Send className="h-4 w-4" />
               إرسال
@@ -274,11 +301,7 @@ export function NotificationsPage() {
           <Input label="العنوان" error={errors.title?.message} {...register('title')} />
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-on-surface">المحتوى</label>
-            <textarea
-              className="min-h-[100px] rounded-xl border border-outline-variant/40 bg-surface px-3 py-2 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              {...register('body')}
-            />
-            {errors.body && <p className="text-xs text-error">{errors.body.message}</p>}
+            <Textarea error={errors.body?.message} {...register('body')} />
           </div>
           <Select label="الجمهور" {...register('target')}>
             <option value="all">الجميع</option>
@@ -288,7 +311,7 @@ export function NotificationsPage() {
           </Select>
 
           {target === 'role' && (
-            <Select label="الدور" value={roleName} onChange={(e) => setRoleName(e.target.value)}>
+            <Select label="الدور" value={roleName} disabled={sending} onChange={(e) => setRoleName(e.target.value)}>
               <option value="" disabled>اختر الدور</option>
               {roles.map((r) => (
                 <option key={r.id} value={r.name}>{r.displayName}</option>
@@ -296,7 +319,7 @@ export function NotificationsPage() {
             </Select>
           )}
           {target === 'branch' && (
-            <Select label="الفرع" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <Select label="الفرع" value={branchId} disabled={sending} onChange={(e) => setBranchId(e.target.value)}>
               <option value="" disabled>اختر الفرع</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -304,16 +327,50 @@ export function NotificationsPage() {
             </Select>
           )}
           {target === 'user' && (
-            <Select label="المستخدم" value={userId} onChange={(e) => setUserId(e.target.value)}>
-              <option value="" disabled>اختر المستخدم</option>
-              {users.map((u) => (
+            <>
+              <Input
+                label="بحث عن مستخدم"
+                type="search"
+                value={userSearch}
+                disabled={sending}
+                placeholder="الاسم أو البريد أو رقم الهاتف"
+                onChange={(event) => setUserSearch(event.target.value)}
+              />
+              <Select label="المستخدم" value={userId} disabled={sending} onChange={(e) => setUserId(e.target.value)}>
+              <option value="">اختر المستخدم</option>
+              {visibleUsers.map((u) => (
                 <option key={u.id} value={String(u.id)}>{u.name} — {u.role}</option>
               ))}
-            </Select>
+              </Select>
+            </>
           )}
 
-          <Input label="رابط الصورة (اختياري)" placeholder="https://..." dir="ltr" {...register('imageUrl')} />
-          <Input label="رابط الوجهة (اختياري)" placeholder="/orders/123" dir="ltr" {...register('targetUrl')} />
+          {target === 'all' && (
+            <p className="rounded-xl bg-primary-surface px-3 py-2 text-sm text-primary" dir="ltr">
+              Sent to all registered users and guest users who have registered a device notification token.
+            </p>
+          )}
+
+          <Input label="رابط الوجهة (اختياري)" placeholder="offers, orders, home" dir="ltr" disabled={sending} {...register('targetUrl')} />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-on-surface">صورة (اختيارية)</label>
+            <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-outline-variant/40 bg-surface px-3 text-sm text-on-surface-variant hover:border-primary">
+              <Upload className="h-4 w-4" />
+              <span className="truncate">{image?.name ?? 'اختر صورة'}</span>
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                disabled={sending}
+                onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+          {submitErrors.length > 0 && (
+            <div role="alert" className="rounded-xl border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+              {submitErrors.map((message, index) => <p key={`${message}-${index}`}>{message}</p>)}
+            </div>
+          )}
         </form>
       </FormDrawer>
 

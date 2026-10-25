@@ -160,6 +160,10 @@ async function refreshAndStore(): Promise<DashboardAuthResponse> {
 
 client.interceptors.request.use(
   async (config) => {
+    // Let the browser add the multipart boundary for every FormData request.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      config.headers.delete('Content-Type');
+    }
     // Never refresh / attach a token for auth endpoints (login, refresh, logout).
     // Otherwise a stale stored refreshToken would be sent before login itself.
     if (!isAuthPath(config.url)) {

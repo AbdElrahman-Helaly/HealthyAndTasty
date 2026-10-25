@@ -577,12 +577,12 @@ export interface NotificationListItem {
 export interface SendNotificationRequest {
   title: string;
   body: string;
-  imageUrl?: string | null;
   targetUrl?: string | null;
   target: NotificationTarget;
-  role?: string | null;
-  branchId?: string | null;
-  userId?: number | null;
+  image?: File | null;
+  role?: string;
+  branchId?: string;
+  userId?: number | string;
 }
 
 // ---------------------------------------------------------------------------
