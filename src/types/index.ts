@@ -562,7 +562,19 @@ export interface AuditLogListParams {
 // Notifications (admin)
 // ---------------------------------------------------------------------------
 
-export type NotificationTarget = 'all' | 'role' | 'branch' | 'user';
+export type NotificationAudienceType =
+  | 'all_users'
+  | 'specific_users'
+  | 'active_users'
+  | 'inactive_users'
+  | 'new_users'
+  | 'users_with_orders'
+  | 'users_without_orders'
+  | 'abandoned_cart_users'
+  | 'customers_by_location'
+  | 'customers_by_category'
+  | 'frequent_customers'
+  | 'customers_by_last_order';
 
 export interface NotificationListItem {
   id: string;
@@ -571,20 +583,55 @@ export interface NotificationListItem {
   imageUrl: string | null;
   targetUrl: string | null;
   target: string;
+  audienceType?: NotificationAudienceType | string | null;
+  recipientCount?: number | null;
+  deliveredCount?: number | null;
+  failedCount?: number | null;
   sentBy: number | null;
   isActive: boolean;
   createdAt: string;
 }
 
-export interface SendNotificationRequest {
+export interface NotificationAudienceRequest {
+  audienceType: NotificationAudienceType;
+  includeGuests: boolean;
+  userIds?: number[];
+  activeWithinDays?: number;
+  inactiveForDays?: number;
+  registeredWithinDays?: number;
+  abandonedCartForHours?: number;
+  government?: string;
+  city?: string;
+  categoryId?: number;
+  minOrdersCount?: number;
+  lastOrderFrom?: string;
+  lastOrderTo?: string;
+}
+
+export interface SendNotificationRequest extends NotificationAudienceRequest {
   title: string;
   body: string;
   targetUrl?: string | null;
-  target: NotificationTarget;
   image?: File | null;
-  role?: string;
-  branchId?: string;
-  userId?: number | string;
+}
+
+export interface NotificationAudiencePreview {
+  totalRecipients: number;
+  registeredUsers: number;
+  guests: number;
+  sample: Array<{
+    name?: string | null;
+    phone?: string | null;
+    userId?: number | null;
+    guestId?: string | null;
+  }>;
+}
+
+export interface NotificationSendResult {
+  recipientCount: number;
+  deliveredCount: number;
+  failedCount: number;
+  audienceType: NotificationAudienceType | string;
 }
 
 // ---------------------------------------------------------------------------

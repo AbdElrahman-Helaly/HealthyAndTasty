@@ -1,5 +1,12 @@
 import { http } from '@/lib/apiClient';
-import type { NotificationListItem, PagedResult, SendNotificationRequest } from '@/types';
+import type {
+  NotificationAudiencePreview,
+  NotificationAudienceRequest,
+  NotificationListItem,
+  NotificationSendResult,
+  PagedResult,
+  SendNotificationRequest,
+} from '@/types';
 
 export interface NotificationListParams {
   page?: number;
@@ -19,22 +26,42 @@ export function listNotifications(
   );
 }
 
-/** POST /api/admin/notifications/send */
-export function sendNotification(
-  body: SendNotificationRequest,
-): Promise<NotificationListItem> {
+function buildAudienceFormData(body: NotificationAudienceRequest): FormData {
   const formData = new FormData();
+  formData.append('AudienceType', body.audienceType);
+  formData.append('IncludeGuests', String(body.includeGuests));
+  body.userIds?.forEach((id) => formData.append('UserIds', String(id)));
+  if (body.activeWithinDays !== undefined) formData.append('ActiveWithinDays', String(body.activeWithinDays));
+  if (body.inactiveForDays !== undefined) formData.append('InactiveForDays', String(body.inactiveForDays));
+  if (body.registeredWithinDays !== undefined) formData.append('RegisteredWithinDays', String(body.registeredWithinDays));
+  if (body.abandonedCartForHours !== undefined) formData.append('AbandonedCartForHours', String(body.abandonedCartForHours));
+  if (body.government) formData.append('Government', body.government);
+  if (body.city) formData.append('City', body.city);
+  if (body.categoryId !== undefined) formData.append('CategoryId', String(body.categoryId));
+  if (body.minOrdersCount !== undefined) formData.append('MinOrdersCount', String(body.minOrdersCount));
+  if (body.lastOrderFrom) formData.append('LastOrderFrom', body.lastOrderFrom);
+  if (body.lastOrderTo) formData.append('LastOrderTo', body.lastOrderTo);
+  return formData;
+}
+
+/** POST /api/admin/notifications/audience/preview */
+export function previewNotificationAudience(body: NotificationAudienceRequest): Promise<NotificationAudiencePreview> {
+  return http.post<NotificationAudiencePreview>(
+    '/api/admin/notifications/audience/preview',
+    buildAudienceFormData(body),
+  );
+}
+
+/** POST /api/admin/notifications/send */
+export function sendNotification(body: SendNotificationRequest): Promise<NotificationSendResult> {
+  const formData = buildAudienceFormData(body);
   formData.append('Title', body.title);
   formData.append('Body', body.body);
-  formData.append('Target', body.target);
 
   if (body.targetUrl) formData.append('TargetUrl', body.targetUrl);
   if (body.image) formData.append('Image', body.image);
-  if (body.target === 'user' && body.userId !== undefined) formData.append('UserId', String(body.userId));
-  if (body.target === 'role' && body.role) formData.append('Role', body.role);
-  if (body.target === 'branch' && body.branchId) formData.append('BranchId', body.branchId);
 
-  return http.post<NotificationListItem>('/api/admin/notifications/send', formData);
+  return http.post<NotificationSendResult>('/api/admin/notifications/send', formData);
 }
 
 /** DELETE /api/admin/notifications/{id} */
