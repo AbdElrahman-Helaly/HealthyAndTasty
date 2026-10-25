@@ -24,7 +24,7 @@ export function listBanners(): Promise<Banner[]> {
 
 export function saveBanner(banner: Omit<Banner, 'id' | 'image'>, image?: File, id?: number): Promise<unknown> {
   const body = new FormData();
-  body.append('Title', banner.title);
+  if (banner.title.trim()) body.append('Title', banner.title);
   body.append('Url', banner.url);
   body.append('IsActive', String(banner.isActive));
   body.append('SortOrder', String(banner.sortOrder));

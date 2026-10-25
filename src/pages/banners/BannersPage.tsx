@@ -67,7 +67,6 @@ function BannerForm({ banner, onClose, onSaved }: { banner: Banner | null; onClo
   const submit = async () => {
     if (pending.current) return;
     const issues: string[] = [];
-    if (!title.trim()) issues.push('عنوان البانر مطلوب');
     if (!banner && !image) issues.push('صورة البانر مطلوبة عند الإضافة');
     if (!sortOrder.trim() || !Number.isInteger(Number(sortOrder)) || Number(sortOrder) < 0) issues.push('ترتيب العرض يجب أن يكون عددًا صحيحًا غير سالب');
     if (cannotClear) issues.push('حذف جميع المنتجات أو الفئات المرتبطة يحتاج دعمًا من الخادم. احتفظ باختيار واحد على الأقل أو ألغِ التعديل.');
@@ -86,7 +85,7 @@ function BannerForm({ banner, onClose, onSaved }: { banner: Banner | null; onClo
   const categoryOptions = categories.map(category => ({ value: String(category.id), label: category.name }));
   return <Modal open onClose={() => { if (!pending.current) onClose(); }} title={banner ? 'تعديل البانر' : 'إضافة بانر'} size="lg">
     <form dir="rtl" className="max-h-[75vh] overflow-y-auto flex flex-col gap-4" onSubmit={event => { event.preventDefault(); void submit(); }}>
-      <Input label="العنوان" value={title} disabled={saving} onChange={event => setTitle(event.target.value)} />
+      <Input label="العنوان (اختياري)" value={title} disabled={saving} onChange={event => setTitle(event.target.value)} />
       <Input label="الرابط" value={url} dir="ltr" disabled={saving} onChange={event => setUrl(event.target.value)} />
       {banner?.image && <ApiImage src={banner.image} alt={banner.title} className="h-28 w-full object-contain" />}
       <Input label={banner ? 'الصورة (اختياري)' : 'الصورة'} type="file" accept="image/*" disabled={saving} onChange={event => setImage(event.target.files?.[0])} />

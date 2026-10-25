@@ -7,6 +7,7 @@ import {
   Building2,
   PackageSearch,
   ImageOff,
+  Download,
 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable, type Column } from '@/components/shared/DataTable';
@@ -18,11 +19,13 @@ import { Card, StatCard } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { listBranches } from '@/api/branches.api';
-import { listInventoryProducts } from '@/api/inventory.api';
-import type { BranchAdmin, InventoryProduct } from '@/types';
+import { exportInventoryProducts, listInventoryProducts } from '@/api/inventory.api';
+import { listAdminCategories } from '@/api/categories.api';
+import type { AdminCategory, BranchAdmin, InventoryProduct } from '@/types';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ApiImage, resolveImageUrl } from '@/components/ui/ApiImage';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/useToast';
 
 const PAGE_SIZE = 20;
 
@@ -37,16 +40,20 @@ function formatPrice(value: number): string {
 export function InventoryPage() {
   const { t } = useTranslation();
   const { user, assignedBranches } = useAuth();
+  const { show: showToast } = useToast();
   const branchEmployee = ['branchemployee', 'branchmanager'].includes(user?.role.toLowerCase() ?? '');
   const [rows, setRows] = useState<InventoryProduct[]>([]);
   const [branches, setBranches] = useState<Pick<BranchAdmin, 'id' | 'name' | 'odooBranchId'>[]>([]);
   const [branchId, setBranchId] = useState('');
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [categoryId, setCategoryId] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [branchesLoading, setBranchesLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   usePageTitle(t('inventory.title'));
 
@@ -85,7 +92,7 @@ export function InventoryPage() {
   }, [branchEmployee, assignedBranches]);
 
   const load = useCallback(
-    async (p: number, opts: { branchId: string; search: string }) => {
+    async (p: number, opts: { branchId: string; categoryId: string; search: string }) => {
       setLoading(true);
       setError('');
       try {
@@ -99,6 +106,7 @@ export function InventoryPage() {
             page: p,
             pageSize: PAGE_SIZE,
             branchId: opts.branchId || undefined,
+            categoryId: opts.categoryId || undefined,
             search: opts.search || undefined,
           },
           opts.branchId ? (findBranch(opts.branchId)?.name ?? '') : '',
@@ -131,22 +139,56 @@ export function InventoryPage() {
     void loadBranches();
   }, [loadBranches]);
 
+  useEffect(() => {
+    void listAdminCategories().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
   // Debounced reload on filter/search change (reset to page 1)
   useEffect(() => {
     const timer = setTimeout(() => {
-      void load(1, { branchId, search: search.trim() });
+      void load(1, { branchId, categoryId, search: search.trim() });
     }, 300);
     return () => clearTimeout(timer);
-  }, [branchId, search, load]);
+  }, [branchId, categoryId, search, load]);
 
   const handleBranchChange = (value: string) => {
     setBranchId(value);
     setPage(1);
   };
 
+  const handleCategoryChange = (value: string) => {
+    setCategoryId(value);
+    setPage(1);
+  };
+
   const handleRefresh = () => {
     void loadBranches();
-    void load(page, { branchId, search: search.trim() });
+    void load(page, { branchId, categoryId, search: search.trim() });
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const file = await exportInventoryProducts({
+        branchId: branchId || undefined,
+        categoryId: categoryId || undefined,
+        search,
+      });
+      const url = URL.createObjectURL(new Blob([file], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'products.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'فشل تصدير ملف Excel', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const columns = useMemo<Column<InventoryProduct>[]>(
@@ -261,10 +303,22 @@ export function InventoryPage() {
         title={t('inventory.title')}
         subtitle={t('inventory.subtitle')}
         actions={
-          <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4" />
-            تحديث
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              title={exporting ? 'Exporting Excel...' : 'Export Excel'}
+              aria-label={exporting ? 'Exporting Excel...' : 'Export Excel'}
+              loading={exporting}
+              onClick={() => void handleExport()}
+            >
+              {!exporting && <Download className="h-4 w-4" />}
+            </Button>
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4" />
+              تحديث
+            </Button>
+          </div>
         }
       />
 
@@ -296,7 +350,7 @@ export function InventoryPage() {
 
       {/* Filters */}
       <Card padding="md" className="mb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_280px] gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_240px_240px] gap-3">
           <Input
             label="بحث"
             placeholder="ابحث بالاسم أو SKU..."
@@ -315,6 +369,12 @@ export function InventoryPage() {
               <option key={b.id} value={String(b.odooBranchId ?? b.id)}>
                 {b.name}
               </option>
+            ))}
+          </Select>
+          <Select label="التصنيف" value={categoryId} onChange={(e) => handleCategoryChange(e.target.value)}>
+            <option value="">كل التصنيفات</option>
+            {categories.map((category) => (
+              <option key={category.id} value={String(category.id)}>{category.name}</option>
             ))}
           </Select>
         </div>
@@ -336,7 +396,7 @@ export function InventoryPage() {
               variant="secondary"
               size="sm"
               className="mt-4"
-              onClick={() => void load(page, { branchId, search: search.trim() })}
+              onClick={() => void load(page, { branchId, categoryId, search: search.trim() })}
             >
               إعادة المحاولة
             </Button>
@@ -352,17 +412,18 @@ export function InventoryPage() {
                 </div>
                 <p className="text-sm font-semibold text-on-surface">لا توجد منتجات</p>
                 <p className="mt-1 text-xs text-on-surface-variant/70">
-                  {search || branchId
-                    ? 'لا توجد منتجات مطابقة للفلتر الحالي — جرّب تغيير الفرع أو البحث'
+                  {search || branchId || categoryId
+                    ? 'لا توجد منتجات مطابقة للفلتر الحالي — جرّب تغيير الفرع أو التصنيف أو البحث'
                     : 'لا توجد منتجات متاحة حاليًا'}
                 </p>
-                {(search || branchId) && (
+                {(search || branchId || categoryId) && (
                   <Button
                     variant="secondary"
                     size="sm"
                     className="mt-4"
                     onClick={() => {
                       setSearch('');
+                      setCategoryId('');
                       if (!branchEmployee) setBranchId('');
                     }}
                   >
@@ -381,7 +442,7 @@ export function InventoryPage() {
                   <Pagination
                     currentPage={page}
                     totalPages={totalPages}
-                    onPageChange={(p) => void load(p, { branchId, search: search.trim() })}
+                    onPageChange={(p) => void load(p, { branchId, categoryId, search: search.trim() })}
                   />
                 </div>
               </>

@@ -396,6 +396,7 @@ export interface InventoryProduct {
   name: string;
   image: string;
   sku: string;
+  categoryId: number | null;
   categoryName: string;
   price: number;
   priceAfterDiscount: number;
@@ -408,6 +409,7 @@ export interface InventoryProduct {
 
 export interface InventoryListParams {
   branchId?: string | number;
+  categoryId?: string | number;
   search?: string;
   page?: number;
   pageSize?: number;

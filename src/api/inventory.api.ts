@@ -52,6 +52,9 @@ export function normalizeInventoryItem(raw: any, fallbackBranchName = ''): Inven
     name: String(raw?.name ?? raw?.title ?? '—'),
     image: String(raw?.image ?? raw?.imageUrl ?? raw?.thumbnail ?? ''),
     sku: String(raw?.sku ?? raw?.SKU ?? raw?.code ?? raw?.id ?? '—'),
+    categoryId: raw?.categoryId === undefined || raw?.categoryId === null
+      ? null
+      : toNumber(raw.categoryId),
     categoryName: String(raw?.categoryName ?? raw?.category ?? ''),
     price,
     priceAfterDiscount,
@@ -108,6 +111,10 @@ export async function listInventoryProducts(
     params.branchId === '' || params.branchId === undefined || params.branchId === null
       ? undefined
       : params.branchId;
+  const categoryId =
+    params.categoryId === '' || params.categoryId === undefined || params.categoryId === null
+      ? undefined
+      : params.categoryId;
 
   // 1) Preferred: admin endpoint with server-side branchId + search + paging
   try {
@@ -116,6 +123,7 @@ export async function listInventoryProducts(
       pageSize: String(pageSize),
     };
     if (branchId !== undefined) query.branchId = String(branchId);
+    if (categoryId !== undefined) query.categoryId = String(categoryId);
     if (search) query.search = search;
     const payload = await http.get<unknown>('/api/admin/products', { params: query });
     return normalizePage(payload, { page, pageSize }, fallbackBranchName);
@@ -146,5 +154,21 @@ export async function listInventoryProducts(
     };
   }
 
+  if (categoryId !== undefined) {
+    const filtered = normalized.items.filter((product) => String(product.categoryId) === String(categoryId));
+    normalized = { ...normalized, items: filtered, totalCount: filtered.length, totalPages: 1 };
+  }
+
   return normalized;
+}
+
+/** GET /api/admin/products/export — authenticated Excel file download. */
+export function exportInventoryProducts(
+  params: Pick<InventoryListParams, 'branchId' | 'categoryId' | 'search'>,
+): Promise<Blob> {
+  const query: Record<string, string> = {};
+  if (params.branchId !== undefined && params.branchId !== '') query.branchId = String(params.branchId);
+  if (params.categoryId !== undefined && params.categoryId !== '') query.categoryId = String(params.categoryId);
+  if (params.search?.trim()) query.search = params.search.trim();
+  return http.get<Blob>('/api/admin/products/export', { params: query, responseType: 'blob' });
 }
