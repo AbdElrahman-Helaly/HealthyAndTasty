@@ -1,14 +1,14 @@
 import { ApiImage } from '@/components/ui/ApiImage';
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Package, X, RefreshCw } from 'lucide-react';
-import { listBanners, saveBanner, listBannerProducts, type Banner, type BannerProduct } from '@/api/banners.api';
+import { Plus, Pencil, Package, Trash2, X, RefreshCw } from 'lucide-react';
+import { deleteBanner, listBanners, saveBanner, listBannerProducts, type Banner, type BannerProduct } from '@/api/banners.api';
 import { listInventoryProducts } from '@/api/inventory.api';
 import { listAdminCategories } from '@/api/categories.api';
 import { ApiError } from '@/lib/apiClient';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog, Modal } from '@/components/ui/Modal';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { Pagination } from '@/components/ui/Pagination';
 import { formatCurrency } from '@/config/orderStatus';
@@ -140,6 +140,8 @@ export function BannersPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [form, setForm] = useState<{ banner: Banner | null } | null>(null);
   const [viewing, setViewing] = useState<Banner | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Banner | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [revision, setRevision] = useState(0);
   const { show } = useToast();
   useEffect(() => {
@@ -148,9 +150,24 @@ export function BannersPage() {
     void listBanners().then(result => { if (!cancelled) setRows(result); }).catch(error => { if (!cancelled) setErrors(errorMessages(error)); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [revision]);
+  const removeBanner = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteBanner(deleteTarget.id);
+      setDeleteTarget(null);
+      show('تم حذف البانر بنجاح', 'success');
+      setRevision(value => value + 1);
+    } catch (error) {
+      show(errorMessages(error).join(' '), 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
   return <div dir="rtl"><PageHeader title="البانرات" subtitle="إدارة بانرات التطبيق" actions={<div className="flex flex-wrap gap-2"><Button onClick={() => setForm({ banner: null })}><Plus className="h-4 w-4" />إضافة بانر</Button><Button variant="secondary" title="تحديث" aria-label="تحديث" onClick={() => setRevision(value => value + 1)}><RefreshCw className="h-4 w-4" /></Button></div>} />
-    {loading ? <p role="status">جاري التحميل...</p> : errors.length ? <div role="alert">{errors.map((error, index) => <p key={index} className="text-error">{error}</p>)}</div> : !rows.length ? <p className="py-12 text-center">لا توجد بانرات</p> : <div className="overflow-x-auto"><table className="w-full min-w-[580px] text-sm"><thead><tr>{['الصورة', 'العنوان', 'الحالة', 'الترتيب', 'إجراءات'].map(label => <th className="p-3 text-start" key={label}>{label}</th>)}</tr></thead><tbody>{rows.map(banner => <tr key={banner.id} className="border-t border-outline-variant/40"><td className="p-3"><ApiImage src={banner.image} alt={banner.title} className="h-16 w-28 object-contain" /></td><td className="p-3">{banner.title}</td><td className="p-3">{banner.isActive ? 'نشط' : 'غير نشط'}</td><td className="p-3">{banner.sortOrder}</td><td className="p-3"><div className="flex gap-2"><Button size="icon" variant="ghost" title="تعديل" aria-label="تعديل" onClick={() => setForm({ banner })}><Pencil className="h-4 w-4" /></Button><Button variant="secondary" size="sm" onClick={() => setViewing(banner)}><Package className="h-4 w-4" />عرض منتجات البانر</Button></div></td></tr>)}</tbody></table></div>}
+    {loading ? <p role="status">جاري التحميل...</p> : errors.length ? <div role="alert">{errors.map((error, index) => <p key={index} className="text-error">{error}</p>)}</div> : !rows.length ? <p className="py-12 text-center">لا توجد بانرات</p> : <div className="overflow-x-auto"><table className="w-full min-w-[580px] text-sm"><thead><tr>{['الصورة', 'العنوان', 'الحالة', 'الترتيب', 'إجراءات'].map(label => <th className="p-3 text-start" key={label}>{label}</th>)}</tr></thead><tbody>{rows.map(banner => <tr key={banner.id} className="border-t border-outline-variant/40"><td className="p-3"><ApiImage src={banner.image} alt={banner.title} className="h-16 w-28 object-contain" /></td><td className="p-3">{banner.title || '—'}</td><td className="p-3">{banner.isActive ? 'نشط' : 'غير نشط'}</td><td className="p-3">{banner.sortOrder}</td><td className="p-3"><div className="flex gap-2"><Button size="icon" variant="ghost" title="تعديل" aria-label="تعديل" onClick={() => setForm({ banner })}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" className="text-error hover:bg-error/10" title="حذف البانر" aria-label="حذف البانر" onClick={() => setDeleteTarget(banner)}><Trash2 className="h-4 w-4" /></Button><Button variant="secondary" size="sm" onClick={() => setViewing(banner)}><Package className="h-4 w-4" />عرض منتجات البانر</Button></div></td></tr>)}</tbody></table></div>}
     {form && <BannerForm banner={form.banner} onClose={() => setForm(null)} onSaved={() => { setForm(null); show('تم حفظ البانر بنجاح', 'success'); setRevision(value => value + 1); }} />}
     {viewing && <BannerProducts banner={viewing} onClose={() => setViewing(null)} />}
+    <ConfirmDialog open={deleteTarget !== null} onClose={() => { if (!deleting) setDeleteTarget(null); }} onConfirm={() => void removeBanner()} loading={deleting} title="حذف البانر" message={`هل أنت متأكد من حذف البانر ${deleteTarget?.title ? `"${deleteTarget.title}"` : `رقم ${deleteTarget?.id ?? ''}`}؟ لا يمكن التراجع عن هذا الإجراء.`} confirmText="حذف" />
   </div>;
 }

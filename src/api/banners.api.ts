@@ -22,6 +22,11 @@ export function listBanners(): Promise<Banner[]> {
   return http.get('/api/banners');
 }
 
+/** DELETE /api/banners/{id} */
+export function deleteBanner(id: number): Promise<unknown> {
+  return http.delete(`/api/banners/${encodeURIComponent(String(id))}`);
+}
+
 export function saveBanner(banner: Omit<Banner, 'id' | 'image'>, image?: File, id?: number): Promise<unknown> {
   const body = new FormData();
   if (banner.title.trim()) body.append('Title', banner.title);
