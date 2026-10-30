@@ -26,6 +26,22 @@ function formatDate(iso: string): string {
   });
 }
 
+function isCardPayment(method: string | null | undefined): boolean {
+  const value = method?.toLowerCase() ?? '';
+  return value.includes('card') || value.includes('visa') || value.includes('online');
+}
+
+function paymentStatusBadge(status: string | null | undefined) {
+  const normalized = status?.toLowerCase();
+  if (normalized === 'paid' || normalized === 'completed' || normalized === 'success') {
+    return <span className="badge badge-success">تم الدفع</span>;
+  }
+  if (normalized === 'failed' || normalized === 'cancelled' || normalized === 'rejected') {
+    return <span className="badge badge-danger">فشل الدفع</span>;
+  }
+  return <span className="rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">بانتظار الدفع</span>;
+}
+
 export function OrderDetailsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -164,6 +180,12 @@ export function OrderDetailsPage() {
                 <div>
                   <p className="text-[11px] text-on-surface-variant/60">طريقة الدفع</p>
                   <p className="text-sm font-medium text-on-surface">{order.paymentMethod || '—'}</p>
+                  {isCardPayment(order.paymentMethod) && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      {paymentStatusBadge(order.paymentStatus)}
+                      {order.paidAt && <span className="text-[11px] text-on-surface-variant/60">{formatDate(order.paidAt)}</span>}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2.5">

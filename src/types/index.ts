@@ -214,6 +214,8 @@ export interface DashboardOrderListItem {
   branchId: number;
   branchName: string;
   paymentMethod: string;
+  paymentStatus?: string | null;
+  paidAt?: string | null;
   subtotal: number;
   discount: number;
   deliveryFee: number;

@@ -34,6 +34,22 @@ function formatDate(iso: string): string {
   });
 }
 
+function isCardPayment(method: string | null | undefined): boolean {
+  const value = method?.toLowerCase() ?? '';
+  return value.includes('card') || value.includes('visa') || value.includes('online');
+}
+
+function paymentStatusBadge(status: string | null | undefined) {
+  const normalized = status?.toLowerCase();
+  if (normalized === 'paid' || normalized === 'completed' || normalized === 'success') {
+    return <span className="badge badge-success">تم الدفع</span>;
+  }
+  if (normalized === 'failed' || normalized === 'cancelled' || normalized === 'rejected') {
+    return <span className="badge badge-danger">فشل الدفع</span>;
+  }
+  return <span className="rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning">بانتظار الدفع</span>;
+}
+
 export function OrdersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -110,6 +126,13 @@ export function OrdersPage() {
         key: 'total',
         header: 'المبلغ',
         render: (o) => <span className="font-semibold text-on-surface">{formatCurrency(o.total)}</span>,
+      },
+      {
+        key: 'payment',
+        header: 'الدفع',
+        render: (o) => isCardPayment(o.paymentMethod)
+          ? paymentStatusBadge(o.paymentStatus)
+          : <span className="text-xs text-on-surface-variant/70">{o.paymentMethod || '—'}</span>,
       },
       {
         key: 'items',
