@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pencil, RefreshCw, Save } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +13,8 @@ import { useToast } from '@/hooks/useToast';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 export function OrderDeliveryTimePage() {
-  usePageTitle('مدة توصيل الطلبات');
+  const { t } = useTranslation();
+  usePageTitle(t('settings.deliveryTimeTitle'));
   const { show } = useToast();
   const [rows, setRows] = useState<OrderDeliveryTime[]>([]);
   const [activeIds, setActiveIds] = useState<Set<number>>(new Set());
@@ -70,7 +72,7 @@ export function OrderDeliveryTimePage() {
     if (allBranches) setConfirm(body); else void save(body);
   };
   return <div dir="rtl">
-    <PageHeader title="مدة توصيل الطلبات" subtitle="الإعدادات" actions={<Button variant="secondary" disabled={loading || saving} onClick={() => void load()}><RefreshCw className="h-4 w-4" />تحديث</Button>} />
+    <PageHeader title={t('settings.deliveryTimeTitle')} subtitle={t('settings.deliveryTimeSubtitle')} actions={<Button variant="secondary" disabled={loading || saving} onClick={() => void load()}><RefreshCw className="h-4 w-4" />{t('settings.refresh')}</Button>} />
     {loadError && <p role="alert" className="mb-4 text-error">{loadError}</p>}
     <form ref={formRef} className="border-b border-outline-variant/40 pb-6 mb-5" onSubmit={event => { event.preventDefault(); submit(); }}>
       <fieldset disabled={saving || loading || !!loadError || confirm !== null} className="flex flex-col gap-4">

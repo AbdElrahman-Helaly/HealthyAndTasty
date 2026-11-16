@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pencil, Eye, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -15,7 +16,8 @@ const blankSchedule = (): ScheduleDay[] => weekDays.map(([day]) => ({ day, isClo
 const message = (error: unknown) => error instanceof ApiError ? [error.message, ...error.errors].join('، ') : 'تعذر تنفيذ الطلب';
 
 export function BranchHoursPage() {
-  usePageTitle('مواعيد الفروع');
+  const { t } = useTranslation();
+  usePageTitle(t('settings.branchHoursTitle'));
   const { user } = useAuth();
   const { show } = useToast();
   const canEdit = ['admin', 'generalmanager'].includes(user?.role.toLowerCase() ?? '');
@@ -80,7 +82,7 @@ export function BranchHoursPage() {
     setError('');
     if (allBranches || branchIds.length > 1) setConfirm(body); else void save(body);
   };
-  return <div dir="rtl"><PageHeader title="مواعيد الفروع" subtitle="المواعيد بتوقيت القاهرة" actions={<Button variant="secondary" disabled={loading || saving || detailLoading} onClick={() => void load()}><RefreshCw className="h-4 w-4" />تحديث</Button>} />
+  return <div dir="rtl"><PageHeader title={t('settings.branchHoursTitle')} subtitle={t('settings.branchHoursSubtitle')} actions={<Button variant="secondary" disabled={loading || saving || detailLoading} onClick={() => void load()}><RefreshCw className="h-4 w-4" />{t('settings.refresh')}</Button>} />
     {loadError && <p role="alert" className="text-error mb-4">{loadError}</p>}
     <form ref={form} onSubmit={event => { event.preventDefault(); submit(); }} className="border-b border-outline-variant/40 pb-5 mb-5">
       {loadedBranch && <p className="mb-3 font-semibold">{loadedBranch.branchName} {loadedBranch.hasSchedule ? '' : '— غير محدد'}</p>}
