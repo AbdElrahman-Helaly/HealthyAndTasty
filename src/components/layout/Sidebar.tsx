@@ -18,7 +18,6 @@ import {
   LogOut,
   Sparkles,
   Truck,
-  Tag,
   LayoutGrid,
   Package,
 } from 'lucide-react';
@@ -67,7 +66,6 @@ const moduleStyles: Record<string, ModuleStyle> = {
   '/statistics': { gradient: 'linear-gradient(135deg, #A78BFA, #4338CA)', shadow: 'rgba(67,56,202,0.35)', color: '#6366F1' },
   '/notifications': { gradient: 'linear-gradient(135deg, #FDE047, #EAB308)', shadow: 'rgba(234,179,8,0.35)', color: '#FACC15' },
   '/shipping-rates': { gradient: 'linear-gradient(135deg, #2DD4BF, #0F766E)', shadow: 'rgba(13,148,136,0.35)', color: '#14B8A6' },
-  '/offers': { gradient: 'linear-gradient(135deg, #F472B6, #BE185D)', shadow: 'rgba(190,24,93,0.35)', color: '#DB2777' },
   '/categories': { gradient: 'linear-gradient(135deg, #A78BFA, #6D28D9)', shadow: 'rgba(109,40,217,0.35)', color: '#8B5CF6' },
   '/inventory': { gradient: 'linear-gradient(135deg, #34D399, #0D9488)', shadow: 'rgba(13,148,136,0.35)', color: '#10B981' },
   '/profile': { gradient: 'linear-gradient(135deg, #94A3B8, #475569)', shadow: 'rgba(71,85,105,0.35)', color: '#64748B' },
@@ -120,12 +118,6 @@ const navGroups: NavGroup[] = [
         icon: Truck,
         labelKey: 'nav.shippingRates',
         roles: ['admin', 'generalmanager', 'branchmanager'],
-      },
-      {
-        to: '/offers',
-        icon: Tag,
-        labelKey: 'nav.offers',
-        roles: ['admin'],
       },
       {
         to: '/categories',
