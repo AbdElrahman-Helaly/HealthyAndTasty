@@ -31,6 +31,11 @@ const statusConfig: Record<OrderStatusNumber, { label: string; className: string
   10: { label: 'مرفوض', className: 'badge badge-danger', color: '#F43F5E' },
 };
 
+// Keep the dashboard renderable if the API returns an unknown/new status.
+function getStatusConfig(statusNumber: unknown) {
+  return statusConfig[Number(statusNumber) as OrderStatusNumber] ?? statusConfig[1];
+}
+
 function fmt(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(n % 1000 === 0 ? 0 : 1) + 'K';
@@ -231,7 +236,10 @@ export function DashboardPage() {
 
   const donutData = data.ordersByStatus
     .filter(s => s.count > 0)
-    .map(s => ({ label: statusConfig[s.statusNumber].label, value: s.count, color: statusConfig[s.statusNumber].color }));
+    .map(s => {
+      const cfg = getStatusConfig(s.statusNumber);
+      return { label: cfg.label, value: s.count, color: cfg.color };
+    });
 
   return (
     <div className="flex flex-col gap-5">
@@ -388,7 +396,7 @@ export function DashboardPage() {
                 <p className="text-sm text-on-surface-variant/60 py-4 text-center">لا توجد بيانات</p>
               )}
               {data.ordersByStatus.slice(0, 6).map((s) => {
-                const cfg = statusConfig[s.statusNumber];
+                const cfg = getStatusConfig(s.statusNumber);
                 const pct = data.totalOrders > 0 ? (s.count / data.totalOrders) * 100 : 0;
                 return (
                   <div key={s.statusNumber} className="flex items-center gap-3">
