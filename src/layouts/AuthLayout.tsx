@@ -26,8 +26,7 @@ function ChangeBadge({ value, isUp }: { value: string; isUp: boolean }) {
 }
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
-  const { i18n } = useTranslation();
-  const isRtl = i18n.language === 'ar';
+  const { t } = useTranslation();
 
   return (
     <div className="relative h-screen flex overflow-hidden"
@@ -52,7 +51,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-3.5 w-3.5 text-purple-500" />
               <span className="text-[10px] font-semibold text-purple-500 tracking-wide uppercase">
-                {isRtl ? 'نظرة سريعة' : "Today's Overview"}
+                {t('auth.overview')}
               </span>
             </div>
 
@@ -64,7 +63,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#5B34A7]">Super Admin</p>
-                  <p className="text-[11px] text-purple-500/80">{isRtl ? 'لوحة التحكم' : 'Dashboard'}</p>
+                  <p className="text-[11px] text-purple-500/80">{t('auth.dashboard')}</p>
                 </div>
               </div>
 
@@ -76,7 +75,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                       <ShoppingCart className="h-[18px] w-[18px] text-white" />
                     </div>
                     <div>
-                      <span className="text-[11px] font-semibold text-orange-700">{isRtl ? 'الطلبات' : 'Orders'}</span>
+                      <span className="text-[11px] font-semibold text-orange-700">{t('auth.orders')}</span>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xl font-bold text-orange-800">356</span>
                         <ChangeBadge value="+12.5%" isUp />
@@ -97,7 +96,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <MiniChart color="#16A34A" />
                 </div>
-                <span className="text-[11px] font-semibold text-green-700">{isRtl ? 'المنتجات' : 'Products'}</span>
+                <span className="text-[11px] font-semibold text-green-700">{t('auth.products')}</span>
                 <div className="flex items-end justify-between">
                   <span className="text-base font-bold text-green-800">1,284</span>
                   <ChangeBadge value="+4.2%" isUp />
@@ -112,7 +111,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <MiniChart color="#5B34A7" />
                 </div>
-                <span className="text-[11px] font-semibold text-[#5B34A7]">{isRtl ? 'التوصيل' : 'Delivery'}</span>
+                <span className="text-[11px] font-semibold text-[#5B34A7]">{t('auth.delivery')}</span>
                 <div className="flex items-end justify-between">
                   <span className="text-base font-bold text-[#5B34A7]">98%</span>
                   <ChangeBadge value="-0.8%" isUp={false} />
@@ -126,7 +125,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                     <ChefHat className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-semibold text-amber-700">{isRtl ? 'الشيفات' : 'Chefs'}</span>
+                    <span className="text-[11px] font-semibold text-amber-700">{t('auth.chefs')}</span>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-base font-bold text-amber-800">48</span>
                       <ChangeBadge value="+2" isUp />
@@ -142,7 +141,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <div className="text-center">
             <p className="text-xs text-purple-400/50 font-medium tracking-wide uppercase">Healthy & Tasty</p>
             <p className="text-sm text-purple-700/80 font-semibold mt-0.5">
-              {isRtl ? 'لوحة تحكم احترافية لإدارة Healthy & Tasty' : 'Manage your platform with ease'}
+              {t('auth.manageWithEase')}
             </p>
           </div>
         </div>

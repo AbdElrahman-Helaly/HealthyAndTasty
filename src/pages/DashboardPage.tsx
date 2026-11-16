@@ -32,8 +32,16 @@ const statusConfig: Record<OrderStatusNumber, { label: string; className: string
 };
 
 // Keep the dashboard renderable if the API returns an unknown/new status.
-function getStatusConfig(statusNumber: unknown) {
-  return statusConfig[Number(statusNumber) as OrderStatusNumber] ?? statusConfig[1];
+function getStatusConfig(statusNumber: unknown, t?: (key: string) => string) {
+  const config = statusConfig[Number(statusNumber) as OrderStatusNumber] ?? statusConfig[1];
+  if (!t) return config;
+  const labels: Record<number, string> = {
+    1: 'dashboard.statusPending', 2: 'dashboard.statusConfirmed', 3: 'dashboard.statusFailedToSync',
+    4: 'dashboard.statusCancelled', 5: 'dashboard.statusCompleted', 6: 'dashboard.statusPreparing',
+    7: 'dashboard.statusReadyForDelivery', 8: 'dashboard.statusOutForDelivery',
+    9: 'dashboard.statusDelivered', 10: 'dashboard.statusRejected',
+  };
+  return { ...config, label: t(labels[Number(statusNumber)] ?? labels[1]) };
 }
 
 function fmt(n: number): string {
@@ -47,9 +55,9 @@ function fadeUp(delay: number) {
 }
 
 // ===== Orders Donut =====
-function OrdersDonut({ data }: { data: { label: string; value: number; color: string }[] }) {
+function OrdersDonut({ data, t }: { data: { label: string; value: number; color: string }[]; t: (key: string) => string }) {
   const total = data.reduce((s, d) => s + d.value, 0);
-  if (!total) return <div className="flex items-center justify-center h-36 text-sm text-on-surface-variant/60">لا توجد طلبات</div>;
+  if (!total) return <div className="flex items-center justify-center h-36 text-sm text-on-surface-variant/60">{t('dashboard.noOrders')}</div>;
   const r = 70; const cx = 100; const cy = 100; const circ = 2 * Math.PI * r;
 
   const segments = data.reduce(
@@ -86,17 +94,17 @@ function OrdersDonut({ data }: { data: { label: string; value: number; color: st
 }
 
 // ===== Top Products Table =====
-function TopProductsTable({ products }: { products: DashboardStatistics['topProducts'] }) {
-  if (!products.length) return <div className="flex items-center justify-center h-32 text-sm text-on-surface-variant/60">لا توجد منتجات</div>;
+function TopProductsTable({ products, t }: { products: DashboardStatistics['topProducts']; t: (key: string) => string }) {
+  if (!products.length) return <div className="flex items-center justify-center h-32 text-sm text-on-surface-variant/60">{t('dashboard.noProducts')}</div>;
 
   return (
     <div className="overflow-x-auto -mx-1">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100">
-            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">المنتج</th>
-            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">الكمية المباعة</th>
-            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">الإيرادات</th>
+            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">{t('dashboard.product')}</th>
+            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">{t('dashboard.quantitySold')}</th>
+            <th className="text-start py-3.5 px-3 text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">{t('dashboard.revenue')}</th>
           </tr>
         </thead>
         <tbody>
@@ -125,8 +133,8 @@ function TopProductsTable({ products }: { products: DashboardStatistics['topProd
 }
 
 // ===== Branch Bars =====
-function BranchBars({ branches }: { branches: DashboardStatistics['revenueByBranch'] }) {
-  if (!branches.length) return <div className="flex items-center justify-center h-32 text-sm text-on-surface-variant/60">لا توجد بيانات فروع</div>;
+function BranchBars({ branches, t }: { branches: DashboardStatistics['revenueByBranch']; t: (key: string, options?: { count: number }) => string }) {
+  if (!branches.length) return <div className="flex items-center justify-center h-32 text-sm text-on-surface-variant/60">{t('dashboard.noBranchData')}</div>;
   const maxRev = Math.max(...branches.map(b => b.revenue));
   const branchColors = [C.primary, C.blue, C.green, C.orange, C.purple];
 
@@ -153,7 +161,7 @@ function BranchBars({ branches }: { branches: DashboardStatistics['revenueByBran
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-on-surface-variant/50">{b.ordersCount} طلب</span>
+              <span className="text-[10px] text-on-surface-variant/50">{b.ordersCount} {t('dashboard.ordersAction')}</span>
             </div>
           </div>
         );
@@ -237,13 +245,13 @@ export function DashboardPage() {
   const donutData = data.ordersByStatus
     .filter(s => s.count > 0)
     .map(s => {
-      const cfg = getStatusConfig(s.statusNumber);
+      const cfg = getStatusConfig(s.statusNumber, t);
       return { label: cfg.label, value: s.count, color: cfg.color };
     });
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="نظرة عامة" subtitle="لوحة التحكم الرئيسية للمنصة" />
+      <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.quickOverviewSubtitle')} />
 
       {/* Quick Actions + Brand Identity */}
       <motion.div {...fadeUp(0)}>
@@ -265,19 +273,19 @@ export function DashboardPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <Button variant="primary" size="sm" className="gap-1.5" onClick={() => navigate('/employees')}>
                 <UserPlus className="h-4 w-4" />
-                إدارة الموظفين
+                {t('dashboard.manageEmployees')}
               </Button>
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => navigate('/branches')}>
                 <Building2 className="h-4 w-4" />
-                الفروع
+                {t('dashboard.branchesAction')}
               </Button>
               <Button variant="success" size="sm" className="gap-1.5" onClick={() => navigate('/orders')}>
                 <Package className="h-4 w-4" />
-                الطلبات
+                {t('dashboard.ordersAction')}
               </Button>
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => navigate('/reports')}>
                 <Download className="h-4 w-4" />
-                التقارير
+                {t('dashboard.reportsAction')}
               </Button>
             </div>
           </div>
@@ -285,10 +293,10 @@ export function DashboardPage() {
           {/* Brand stats row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100">
             {[
-              { label: 'إجمالي الطلبات', value: data.totalOrders, icon: ShoppingCart, color: '#6D4CFF' },
-              { label: 'إجمالي العملاء', value: data.totalCustomers, icon: Users, color: '#22C55E' },
-              { label: 'الطلبات المكتملة', value: data.deliveredOrders, icon: BadgePercent, color: '#3B82F6' },
-              { label: 'طلبات اليوم', value: data.todayOrders, icon: Activity, color: '#F59E0B' },
+              { label: t('dashboard.totalOrders'), value: data.totalOrders, icon: ShoppingCart, color: '#6D4CFF' },
+              { label: t('dashboard.totalCustomers'), value: data.totalCustomers, icon: Users, color: '#22C55E' },
+              { label: t('dashboard.completedOrders'), value: data.deliveredOrders, icon: BadgePercent, color: '#3B82F6' },
+              { label: t('dashboard.todayOrders'), value: data.todayOrders, icon: Activity, color: '#F59E0B' },
             ].map((s, i) => (
               <div key={i} className="flex items-center gap-2.5 px-2 py-1.5">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${s.color}12`, color: s.color }}>
@@ -307,35 +315,35 @@ export function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="الإيرادات الإجمالية"
+          label={t('dashboard.totalRevenue')}
           value={`${fmt(data.totalRevenue)} ج.م`}
           icon={<DollarSign className="h-5 w-5" />}
           iconColor={C.green}
-          comparisonText="كل الفترات"
+          comparisonText={t('dashboard.allPeriods')}
           index={0}
         />
         <StatCard
-          label="إيرادات اليوم"
+          label={t('dashboard.todayRevenue')}
           value={`${fmt(data.todayRevenue)} ج.م`}
           icon={<Wallet className="h-5 w-5" />}
           iconColor={C.blue}
-          comparisonText="آخر 24 ساعة"
+          comparisonText={t('dashboard.last24Hours')}
           index={1}
         />
         <StatCard
-          label="إجمالي الطلبات"
+          label={t('dashboard.totalOrders')}
           value={data.totalOrders.toLocaleString()}
           icon={<ShoppingCart className="h-5 w-5" />}
           iconColor={C.primary}
-          comparisonText={`${data.todayOrders.toLocaleString()} اليوم`}
+          comparisonText={`${data.todayOrders.toLocaleString()} ${t('dashboard.todayOrders')}`}
           index={2}
         />
         <StatCard
-          label="متوسط قيمة الطلب"
+          label={t('dashboard.averageOrderValue')}
           value={`${fmt(data.averageOrderValue)} ج.م`}
           icon={<ReceiptText className="h-5 w-5" />}
           iconColor={C.orange}
-          comparisonText="لكل طلب"
+          comparisonText={t('dashboard.perOrder')}
           index={3}
         />
       </div>
@@ -346,21 +354,21 @@ export function DashboardPage() {
           <Card padding="xl">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">الإيرادات حسب الفرع</h3>
-                <p className="text-xs text-on-surface-variant/70 mt-0.5">أداء {data.revenueByBranch.length} فروع</p>
+                <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">{t('dashboard.revenueByBranch')}</h3>
+                <p className="text-xs text-on-surface-variant/70 mt-0.5">{t('dashboard.branchPerformance', { count: data.revenueByBranch.length })}</p>
               </div>
             </div>
-            <BranchBars branches={data.revenueByBranch} />
+            <BranchBars branches={data.revenueByBranch} t={t} />
           </Card>
         </motion.div>
 
         <motion.div {...fadeUp(0.12)}>
           <Card padding="xl">
             <div className="mb-4">
-              <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">حالة الطلبات</h3>
-              <p className="text-xs text-on-surface-variant/70 mt-0.5">توزيع الطلبات حسب الحالة</p>
+              <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">{t('dashboard.orderStatus')}</h3>
+              <p className="text-xs text-on-surface-variant/70 mt-0.5">{t('dashboard.orderStatusDistribution')}</p>
             </div>
-            <OrdersDonut data={donutData} />
+            <OrdersDonut data={donutData} t={t} />
           </Card>
         </motion.div>
       </div>
@@ -370,11 +378,11 @@ export function DashboardPage() {
         <Card padding="xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">الأكثر مبيعاً</h3>
-              <p className="text-xs text-on-surface-variant/70 mt-0.5">أفضل {Math.min(data.topProducts.length, 8)} منتجات حسب الإيرادات</p>
+              <h3 className="text-[15px] font-semibold text-on-surface tracking-tight">{t('dashboard.topSelling')}</h3>
+              <p className="text-xs text-on-surface-variant/70 mt-0.5">{t('dashboard.topProductsByRevenue', { count: Math.min(data.topProducts.length, 8) })}</p>
             </div>
           </div>
-          <TopProductsTable products={data.topProducts} />
+          <TopProductsTable products={data.topProducts} t={t} />
         </Card>
       </motion.div>
 
@@ -387,16 +395,16 @@ export function DashboardPage() {
                 <Activity className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-on-surface">حالة الطلبات بالتفصيل</h3>
-                <p className="text-[11px] text-on-surface-variant/60 mt-0.5">عدد الطلبات لكل حالة</p>
+                <h3 className="text-sm font-semibold text-on-surface">{t('dashboard.orderStatusDetails')}</h3>
+                <p className="text-[11px] text-on-surface-variant/60 mt-0.5">{t('dashboard.ordersPerStatus')}</p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
               {data.ordersByStatus.length === 0 && (
-                <p className="text-sm text-on-surface-variant/60 py-4 text-center">لا توجد بيانات</p>
+                <p className="text-sm text-on-surface-variant/60 py-4 text-center">{t('dashboard.noData')}</p>
               )}
               {data.ordersByStatus.slice(0, 6).map((s) => {
-                const cfg = getStatusConfig(s.statusNumber);
+                const cfg = getStatusConfig(s.statusNumber, t);
                 const pct = data.totalOrders > 0 ? (s.count / data.totalOrders) * 100 : 0;
                 return (
                   <div key={s.statusNumber} className="flex items-center gap-3">
@@ -439,14 +447,14 @@ export function DashboardPage() {
                 <Bell className="h-4 w-4" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-on-surface">آخر الإشعارات</h3>
-                <p className="text-[11px] text-on-surface-variant/60 mt-0.5">أحداث وتحديثات المنصة</p>
+                <h3 className="text-sm font-semibold text-on-surface">{t('dashboard.recentNotifications')}</h3>
+                <p className="text-[11px] text-on-surface-variant/60 mt-0.5">{t('dashboard.platformEvents')}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/notifications')}>عرض الكل</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/notifications')}>{t('common.all')}</Button>
             </div>
             <div className="flex flex-col gap-1">
               {notifications.length === 0 ? (
-                <p className="text-sm text-on-surface-variant/60 py-4 text-center">لا توجد إشعارات</p>
+                <p className="text-sm text-on-surface-variant/60 py-4 text-center">{t('dashboard.noNotifications')}</p>
               ) : (
                 notifications.slice(0, 5).map((n) => (
                   <div key={n.id} className="flex items-start gap-3 py-3 px-2 rounded-xl hover:bg-primary-surface/20 transition-colors">
