@@ -31,7 +31,7 @@ const audienceLabelKeys: Record<string, string> = {
   frequent_customers: 'notifications.frequentCustomers', customers_by_last_order: 'notifications.customersByLastOrder',
 };
 const audienceLabels: Record<string, string> = { all_users: 'جميع المستخدمين', specific_users: 'مستخدم واحد أو أكثر', active_users: 'المستخدمون النشطون', inactive_users: 'المستخدمون غير النشطين', new_users: 'المستخدمون المسجلون حديثاً', users_with_orders: 'المستخدمون الذين طلبوا سابقاً', users_without_orders: 'المستخدمون الذين لم يطلبوا', abandoned_cart_users: 'المستخدمون الذين تركوا منتجات في السلة', customers_by_location: 'العملاء حسب المنطقة', customers_by_category: 'العملاء المهتمون بتصنيف', frequent_customers: 'العملاء الأكثر طلباً', customers_by_last_order: 'العملاء حسب آخر طلب', all: 'الجميع', role: 'حسب الدور', branch: 'حسب الفرع', user: 'مستخدم محدد' };
-const audienceOptions: Array<{ value: NotificationAudienceType; label: string }> = [
+const audienceOptions: any[] = [
   { value: 'all_users', label: 'All Users / جميع المستخدمين' }, { value: 'specific_users', label: 'Specific Users / مستخدم واحد أو أكثر' }, { value: 'active_users', label: 'Active Users / المستخدمون النشطون' }, { value: 'inactive_users', label: 'Inactive Users / المستخدمون غير النشطين' }, { value: 'new_users', label: 'New Users / المستخدمون المسجلون حديثاً' }, { value: 'users_with_orders', label: 'Users With Orders / المستخدمون الذين طلبوا سابقاً' }, { value: 'users_without_orders', label: 'Users Without Orders / المستخدمون الذين لم يطلبوا' }, { value: 'abandoned_cart_users', label: 'Abandoned Cart Users / المستخدمون الذين تركوا منتجات في السلة' }, { value: 'customers_by_location', label: 'Customers By Location / العملاء حسب المنطقة' }, { value: 'customers_by_category', label: 'Customers By Category / العملاء المهتمون بتصنيف' }, { value: 'frequent_customers', label: 'Frequent Customers / العملاء الأكثر طلباً' }, { value: 'customers_by_last_order', label: 'Customers By Last Order / العملاء حسب آخر طلب' },
 ];
 
@@ -39,6 +39,7 @@ function timeAgo(value: string) { const mins = Math.floor((Date.now() - new Date
 function errorsFrom(error: unknown): string[] { return error instanceof ApiError ? (error.errors.length ? error.errors : [error.message]) : [error instanceof Error ? error.message : 'فشل تنفيذ الطلب']; }
 
 export function NotificationsPage() {
+  void audienceLabels;
   const { t } = useTranslation(); const { show } = useToast();
   const [rows, setRows] = useState<NotificationListItem[]>([]); const [page, setPage] = useState(1); const [totalPages, setTotalPages] = useState(1); const [error, setError] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false); const [sending, setSending] = useState(false); const [previewing, setPreviewing] = useState(false); const [deleting, setDeleting] = useState(false); const [deleteTarget, setDeleteTarget] = useState<NotificationListItem | null>(null);
