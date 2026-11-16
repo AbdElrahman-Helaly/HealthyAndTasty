@@ -163,7 +163,7 @@ export function EmployeesPage() {
     () => [
       {
         key: 'name',
-        header: 'الموظف',
+        header: t('employees.employee'),
         render: (e) => (
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6D4CFF] text-xs font-bold text-white">
@@ -178,17 +178,17 @@ export function EmployeesPage() {
       },
       {
         key: 'email',
-        header: 'البريد الإلكتروني',
+        header: t('employees.email'),
         render: (e) => <span className="text-on-surface-variant/80" dir="ltr">{e.email || '—'}</span>,
       },
       {
         key: 'role',
-        header: 'الدور',
+        header: t('employees.role'),
         render: (e) => <span className="rounded-full bg-primary-surface px-2.5 py-1 text-xs font-semibold text-primary">{e.role}</span>,
       },
       {
         key: 'branches',
-        header: 'الفروع',
+        header: t('employees.branches'),
         render: (e) => (
           <div className="flex flex-wrap gap-1 max-w-[220px]">
             {e.branchNames.length === 0 && <span className="text-on-surface-variant/50">—</span>}
@@ -201,24 +201,24 @@ export function EmployeesPage() {
       },
       {
         key: 'status',
-        header: 'الحالة',
+        header: t('employees.status'),
         render: (e) => (
           <span className={e.isActive ? 'badge badge-success' : 'badge badge-danger'}>
-            {e.isActive ? 'نشط' : 'موقوف'}
+            {e.isActive ? t('employees.active') : t('employees.suspended')}
           </span>
         ),
       },
       {
         key: 'createdAt',
-        header: 'تاريخ الإنشاء',
+        header: t('employees.createdAt'),
         render: (e) => <span className="text-xs text-on-surface-variant/60">{formatDate(e.createdAt)}</span>,
       },
       {
         key: 'actions',
-        header: 'إجراءات',
+        header: t('employees.actions'),
         render: employee => canManageEmployee(employee) ? <div className="flex items-center gap-1" onClick={event => event.stopPropagation()}>
-          {hasPermission(PERMISSIONS.EmployeesUpdate) && <Button variant="ghost" size="icon" title="تغيير الباسورد" aria-label={`تغيير الباسورد: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'password' })}><KeyRound className="h-4 w-4" /></Button>}
-          {hasPermission(PERMISSIONS.EmployeesDeactivate) && <Button variant="ghost" size="icon" className="text-error" title="حذف الموظف" aria-label={`حذف الموظف: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'delete' })}><Trash2 className="h-4 w-4" /></Button>}
+          {hasPermission(PERMISSIONS.EmployeesUpdate) && <Button variant="ghost" size="icon" title={t('employees.changePassword')} aria-label={`${t('employees.changePassword')}: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'password' })}><KeyRound className="h-4 w-4" /></Button>}
+          {hasPermission(PERMISSIONS.EmployeesDeactivate) && <Button variant="ghost" size="icon" className="text-error" title={t('employees.deleteEmployee')} aria-label={`${t('employees.deleteEmployee')}: ${employee.name}`} onClick={() => setActionTarget({ employee, action: 'delete' })}><Trash2 className="h-4 w-4" /></Button>}
         </div> : null,
       },
     ],
@@ -234,7 +234,7 @@ export function EmployeesPage() {
           <PermissionGate permission={PERMISSIONS.EmployeesCreate}>
             <Button size="sm" className="gap-1.5" onClick={openDrawer}>
               <UserPlus className="h-4 w-4" />
-              إضافة موظف
+              {t('employees.addEmployee')}
             </Button>
           </PermissionGate>
         }
@@ -244,8 +244,8 @@ export function EmployeesPage() {
       <Card padding="md" className="mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input
-            label="بحث"
-            placeholder="الاسم أو الهاتف أو البريد"
+            label={t('employees.search')}
+            placeholder={t('employees.searchPlaceholder')}
             icon={<Search className="h-4 w-4" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -258,7 +258,7 @@ export function EmployeesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm font-medium text-on-surface-variant">{error}</p>
             <Button variant="secondary" size="sm" className="mt-4" onClick={() => void load(page, search)}>
-              إعادة المحاولة
+              {t('employees.retry')}
             </Button>
           </div>
         )}
@@ -269,10 +269,10 @@ export function EmployeesPage() {
               data={rows}
               keyExtractor={(e) => String(e.id)}
               onRowClick={(e) => navigate(`/employees/${e.id}`)}
-              emptyMessage="لا يوجد موظفون"
+              emptyMessage={t('employees.noEmployees')}
             />
             <div className="px-4 pb-4">
-              <p className="mb-2 text-sm text-on-surface-variant">عدد الموظفين: {totalCount}</p>
+              <p className="mb-2 text-sm text-on-surface-variant">{t('employees.count', { count: totalCount })}</p>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={(p) => void load(p, search)} />
             </div>
           </>
@@ -295,52 +295,52 @@ export function EmployeesPage() {
       <FormDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        title="إضافة موظف جديد"
+        title={t('employees.createTitle')}
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setDrawerOpen(false)}>إلغاء</Button>
-            <Button loading={isCreating} onClick={() => void handleSubmit(onCreate)()}>إنشاء الموظف</Button>
+            <Button variant="secondary" onClick={() => setDrawerOpen(false)}>{t('common.cancel')}</Button>
+            <Button loading={isCreating} onClick={() => void handleSubmit(onCreate)()}>{t('employees.create')}</Button>
           </div>
         }
       >
         <form className="flex flex-col gap-4" onSubmit={handleSubmit(onCreate)}>
-          <Input label="الاسم الأول" placeholder="محمد" error={errors.firstName?.message} {...register('firstName')} />
-          <Input label="اسم العائلة" placeholder="أحمد" error={errors.lastName?.message} {...register('lastName')} />
-          <Input label="رقم الهاتف" placeholder="05xxxxxxxx" dir="ltr" error={errors.phone?.message} {...register('phone')} />
-          <Input label="البريد الإلكتروني (اختياري)" placeholder="name@example.com" dir="ltr" error={errors.email?.message} {...register('email')} />
+          <Input label={t('employees.firstName')} placeholder="محمد" error={errors.firstName?.message} {...register('firstName')} />
+          <Input label={t('employees.lastName')} placeholder="أحمد" error={errors.lastName?.message} {...register('lastName')} />
+          <Input label={t('employees.phone')} placeholder="05xxxxxxxx" dir="ltr" error={errors.phone?.message} {...register('phone')} />
+          <Input label={t('employees.optionalEmail')} placeholder="name@example.com" dir="ltr" error={errors.email?.message} {...register('email')} />
           <Select
-            label="الدور"
+            label={t('employees.role')}
             error={errors.roleId?.message}
             defaultValue=""
             onChange={(e) => setValue('roleId', e.target.value, { shouldValidate: true })}
           >
-            <option value="" disabled>اختر الدور</option>
+            <option value="" disabled>{t('employees.chooseRole')}</option>
             {roles.map((r) => (
               <option key={r.id} value={r.id}>{r.displayName}</option>
             ))}
           </Select>
           <MultiSelect
-            label="الفروع"
+            label={t('employees.branches')}
             options={branches.map((b) => ({ label: b.name, value: b.id }))}
             value={selectedBranchIds}
             onChange={setSelectedBranchIds}
-            placeholder="اختر الفروع"
+            placeholder={t('employees.chooseBranches')}
           />
         </form>
       </FormDrawer>
 
       {/* Temporary password modal */}
-      <Modal open={temporaryPassword !== null} onClose={() => setTemporaryPassword(null)} title="تم إنشاء الموظف">
+      <Modal open={temporaryPassword !== null} onClose={() => setTemporaryPassword(null)} title={t('employees.temporaryPasswordTitle')}>
         <div className="flex flex-col items-center text-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 text-success">
             <CheckCircle2 className="h-7 w-7" />
           </div>
-          <p className="text-sm text-on-surface-variant">كلمة المرور المؤقتة تظهر مرة واحدة فقط. يرجى حفظها وإرسالها للموظف:</p>
+          <p className="text-sm text-on-surface-variant">{t('employees.temporaryPasswordHint')}</p>
           <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
             <KeyRound className="h-4 w-4 text-amber-600" />
             <span className="font-mono text-lg font-bold text-amber-700" dir="ltr">{temporaryPassword}</span>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setTemporaryPassword(null)}>حسناً</Button>
+          <Button variant="secondary" size="sm" onClick={() => setTemporaryPassword(null)}>{t('employees.okay')}</Button>
         </div>
       </Modal>
     </div>
