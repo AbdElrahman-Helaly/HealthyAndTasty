@@ -20,12 +20,13 @@ import {
   Truck,
   LayoutGrid,
   Package,
+  Gift,
 } from 'lucide-react';
 import { branding } from '@/config/branding';
 import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissionContext } from '@/context/PermissionContext';
-import { PERMISSIONS } from '@/types/permissions';
+import { hasLoyaltyRole, LOYALTY_VIEW_PERMISSIONS, PERMISSIONS } from '@/types/permissions';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -63,6 +64,7 @@ const moduleStyles: Record<string, ModuleStyle> = {
   '/roles': { gradient: 'linear-gradient(135deg, #818CF8, #4F46E5)', shadow: 'rgba(79,70,229,0.35)', color: '#6366F1' },
   '/branches': { gradient: 'linear-gradient(135deg, #FBBF24, #EA580C)', shadow: 'rgba(234,88,12,0.35)', color: '#F59E0B' },
   '/reports': { gradient: 'linear-gradient(135deg, #60A5FA, #2563EB)', shadow: 'rgba(37,99,235,0.35)', color: '#3B82F6' },
+  '/loyalty': { gradient: 'linear-gradient(135deg, #F472B6, #BE185D)', shadow: 'rgba(190,24,93,0.35)', color: '#DB2777' },
   '/statistics': { gradient: 'linear-gradient(135deg, #A78BFA, #4338CA)', shadow: 'rgba(67,56,202,0.35)', color: '#6366F1' },
   '/notifications': { gradient: 'linear-gradient(135deg, #FDE047, #EAB308)', shadow: 'rgba(234,179,8,0.35)', color: '#FACC15' },
   '/shipping-rates': { gradient: 'linear-gradient(135deg, #2DD4BF, #0F766E)', shadow: 'rgba(13,148,136,0.35)', color: '#14B8A6' },
@@ -86,6 +88,9 @@ function filterNavGroups(
       ...g,
       items: g.items.filter((item) => {
         if (['branchemployee', 'branchmanager'].includes(normalizedRole)) return ['/orders', '/inventory'].includes(item.to);
+        if (item.to === '/loyalty') {
+          return hasLoyaltyRole(role) && LOYALTY_VIEW_PERMISSIONS.some((permission) => permissions.includes(permission));
+        }
         if (item.permission && !permissions.includes(item.permission)) return false;
         if (item.roles && !item.roles.some((r) => normalizedRole.includes(r))) return false;
         return true;
@@ -138,6 +143,7 @@ const navGroups: NavGroup[] = [
   {
     labelKey: 'nav.sectionMarketing',
     items: [
+      { to: '/loyalty', icon: Gift, labelKey: 'loyalty.title' },
       { to: '/banners', icon: LayoutGrid, labelKey: 'nav.banners', roles: ['admin', 'generalmanager'] },
       { to: '/notifications', icon: BellRing, labelKey: 'nav.notifications', permission: PERMISSIONS.NotificationsSend },
     ],

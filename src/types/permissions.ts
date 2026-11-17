@@ -14,6 +14,11 @@ export const PERMISSIONS = {
   OrdersView: 'Orders.View',
   OrdersUpdateStatus: 'Orders.UpdateStatus',
   OrdersCancel: 'Orders.Cancel',
+  LoyaltySettingsView: 'Loyalty.Settings.View',
+  LoyaltySettingsManage: 'Loyalty.Settings.Manage',
+  LoyaltyWalletsView: 'Loyalty.Wallets.View',
+  LoyaltyWalletsAdjust: 'Loyalty.Wallets.Adjust',
+  LoyaltyReportsView: 'Loyalty.Reports.View',
   NotificationsSend: 'Notifications.Send',
   ReportsView: 'Reports.View',
   ReportsExport: 'Reports.Export',
@@ -25,6 +30,16 @@ export const PERMISSIONS = {
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export const LOYALTY_VIEW_PERMISSIONS = [
+  PERMISSIONS.LoyaltySettingsView,
+  PERMISSIONS.LoyaltyWalletsView,
+  PERMISSIONS.LoyaltyReportsView,
+];
+
+export function hasLoyaltyRole(role?: string | null): boolean {
+  return ['admin', 'generalmanager'].includes(role?.toLowerCase() ?? '');
+}
 
 /** All known permission names as a set (for building checkboxes/matrices) */
 export const ALL_PERMISSIONS: readonly PermissionName[] = Object.values(PERMISSIONS);

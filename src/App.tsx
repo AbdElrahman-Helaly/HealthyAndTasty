@@ -5,7 +5,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SuperAdminLayout } from '@/layouts/SuperAdminLayout';
 import { PageLoader } from '@/components/ui/Spinner';
 import { LoginPage } from '@/pages/LoginPage';
-import { PERMISSIONS } from '@/types/permissions';
+import { LOYALTY_VIEW_PERMISSIONS, PERMISSIONS } from '@/types/permissions';
 
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -54,6 +54,9 @@ const StatisticsPage = lazy(() =>
 );
 const NotificationsPage = lazy(() =>
   import('@/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
+);
+const LoyaltyPage = lazy(() =>
+  import('@/pages/loyalty/LoyaltyPage').then((m) => ({ default: m.LoyaltyPage })),
 );
 const ProfilePage = lazy(() =>
   import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
@@ -201,6 +204,14 @@ export default function App() {
               element={
                 <ProtectedRoute requiredPermissions={[PERMISSIONS.ReportsView]}>
                   <LazyPage><StatisticsPage /></LazyPage>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="loyalty"
+              element={
+                <ProtectedRoute requiredPermissions={LOYALTY_VIEW_PERMISSIONS} requiredRoles={['admin', 'generalmanager']}>
+                  <LazyPage><LoyaltyPage /></LazyPage>
                 </ProtectedRoute>
               }
             />

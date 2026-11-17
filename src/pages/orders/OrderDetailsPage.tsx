@@ -1,6 +1,6 @@
 import { ApiImage } from '@/components/ui/ApiImage';
 import { OrderRating } from './OrderRating';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -11,11 +11,18 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { loyaltyApi } from '@/api/loyalty.api';
 import { getOrderDetail, updateOrderStatus } from '@/api/orders.api';
 import { orderStatusConfig, formatCurrency } from '@/config/orderStatus';
+import { useAuth } from '@/context/AuthContext';
+import { usePermissionContext } from '@/context/PermissionContext';
 import { ORDER_STATUS, type DashboardOrderDetail, type OrderStatusNumber } from '@/types';
+import { hasLoyaltyRole, PERMISSIONS } from '@/types/permissions';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useToast } from '@/hooks/useToast';
+import { LoyaltyError } from '@/pages/loyalty/LoyaltyComponents';
+import { isForbidden } from '@/pages/loyalty/useLoyaltyQuery';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', {
@@ -31,9 +38,18 @@ function isCardPayment(method: string | null | undefined): boolean {
   return value.includes('card') || value.includes('visa') || value.includes('online');
 }
 
+function isCashOnDelivery(method: string | null | undefined): boolean {
+  const value = String(method ?? '').toLowerCase().replace(/[\s_-]+/g, '');
+  return ['cashondelivery', 'cash', 'cod', '1', 'الدفععندالاستلام', 'نقدًاعندالاستلام'].includes(value);
+}
+
+function isPaid(status: string | null | undefined): boolean {
+  return ['paid', 'completed', 'success'].includes(status?.trim().toLowerCase() ?? '');
+}
+
 function paymentStatusBadge(status: string | null | undefined) {
   const normalized = status?.toLowerCase();
-  if (normalized === 'paid' || normalized === 'completed' || normalized === 'success') {
+  if (isPaid(status)) {
     return <span className="badge badge-success">تم الدفع</span>;
   }
   if (normalized === 'failed' || normalized === 'cancelled' || normalized === 'rejected') {
@@ -43,9 +59,15 @@ function paymentStatusBadge(status: string | null | undefined) {
 }
 
 export function OrderDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  return <OrderDetails key={id} id={id} />;
+}
+
+function OrderDetails({ id }: { id?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { hasPermission } = usePermissionContext();
   const { show: showToast } = useToast();
   const [order, setOrder] = useState<DashboardOrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +75,17 @@ export function OrderDetailsPage() {
   const [newStatus, setNewStatus] = useState<OrderStatusNumber | ''>('');
   const [note, setNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [cashDialogOpen, setCashDialogOpen] = useState(false);
+  const [cashSaving, setCashSaving] = useState(false);
+  const [cashRecorded, setCashRecorded] = useState(false);
+  const [cashError, setCashError] = useState<{ cause: unknown }>();
+  const cashInFlight = useRef(false);
+  const canCollectCash = Boolean(
+    order && hasLoyaltyRole(user?.role) && hasPermission(PERMISSIONS.OrdersUpdateStatus)
+    && isCashOnDelivery(order.paymentMethod)
+    && (order.statusNumber === ORDER_STATUS.Delivered || order.statusNumber === ORDER_STATUS.Completed)
+    && !isPaid(order.paymentStatus) && !order.paidAt && !cashRecorded && !isForbidden(cashError?.cause),
+  );
   usePageTitle(t('orders.detailsTitle'));
 
   const load = useCallback(async () => {
@@ -85,7 +118,7 @@ export function OrderDetailsPage() {
   );
 
   async function handleStatusChange() {
-    if (!order || newStatus === '') return;
+    if (!order || newStatus === '' || cashInFlight.current) return;
     setIsSaving(true);
     try {
       const updated = await updateOrderStatus(order.id, { newStatus: newStatus as OrderStatusNumber, note: note || undefined });
@@ -97,6 +130,26 @@ export function OrderDetailsPage() {
       showToast(err instanceof Error ? err.message : 'فشل تحديث حالة الطلب', 'error');
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleCashCollection() {
+    if (!order || !canCollectCash || isSaving || cashInFlight.current) return;
+    cashInFlight.current = true;
+    setCashSaving(true);
+    setCashError(undefined);
+    try {
+      await loyaltyApi.confirmCashCollected(order.id);
+      setCashRecorded(true);
+      setCashDialogOpen(false);
+      showToast(t('loyalty.cashCollected'), 'success');
+      await load();
+    } catch (cause) {
+      setCashError({ cause });
+      if (isForbidden(cause)) setCashDialogOpen(false);
+    } finally {
+      cashInFlight.current = false;
+      setCashSaving(false);
     }
   }
 
@@ -180,7 +233,7 @@ export function OrderDetailsPage() {
                 <div>
                   <p className="text-[11px] text-on-surface-variant/60">طريقة الدفع</p>
                   <p className="text-sm font-medium text-on-surface">{order.paymentMethod || '—'}</p>
-                  {isCardPayment(order.paymentMethod) && (
+                  {(isCardPayment(order.paymentMethod) || isCashOnDelivery(order.paymentMethod)) && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       {paymentStatusBadge(order.paymentStatus)}
                       {order.paidAt && <span className="text-[11px] text-on-surface-variant/60">{formatDate(order.paidAt)}</span>}
@@ -199,6 +252,29 @@ export function OrderDetailsPage() {
               </div>
             </div>
           </Card>
+
+          {canCollectCash && (
+            <div>
+              <Button size="sm" disabled={isSaving || cashSaving} onClick={() => setCashDialogOpen(true)}>
+                {t('loyalty.confirmCash')}
+              </Button>
+            </div>
+          )}
+          {cashError && !cashDialogOpen && <LoyaltyError error={cashError.cause} />}
+          <ConfirmDialog
+            open={cashDialogOpen && canCollectCash}
+            title={t('loyalty.confirmCash')}
+            message={(
+              <div className="space-y-3">
+                <p>{t('loyalty.confirmCashMessage', { order: order.orderNumber })}</p>
+                {cashError && <LoyaltyError error={cashError.cause} />}
+              </div>
+            )}
+            onClose={() => { if (!cashInFlight.current) setCashDialogOpen(false); }}
+            onConfirm={() => void handleCashCollection()}
+            loading={cashSaving}
+            variant="primary"
+          />
 
           <div className="border-y border-outline-variant/40 py-4 text-sm">
             {order.deliveryEstimate ? <>
@@ -298,7 +374,7 @@ export function OrderDetailsPage() {
                 ))}
               </Select>
               <Input placeholder="ملاحظة (اختياري)" value={note} onChange={(e) => setNote(e.target.value)} />
-              <Button loading={isSaving} disabled={newStatus === ''} onClick={() => void handleStatusChange()}>
+              <Button loading={isSaving} disabled={newStatus === '' || cashSaving} onClick={() => void handleStatusChange()}>
                 حفظ الحالة
               </Button>
             </div>
